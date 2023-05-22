@@ -2,13 +2,12 @@
 #include <mcp_can.h>
 
 // Car definitions
-#define RELUCTOR 48        // Number of teeth(points of detection)
-#define WHEEL_DIAMETER .65 // In meter (m)
+#define RELUCTOR 5        // Number of teeth(points of detection)
+#define WHEEL_DIAMETER .5 // In meter (m)
 
 // Program definitions
 #define CYCLE_SIZE 500 // Take calculated each 500ms
 #define WHEEL_INPUT 2   // Digital pin 2 (interrupt enabled)
-#define WHEEL_INPUT2 3   // Digital pin 3 (interrupt enabled)
 
 volatile int pulses;
 int speed = 0;
@@ -17,17 +16,7 @@ unsigned long timeold;
 
 //The interrupt function that allows for the arduino to
 //stop and read the input from the sensor and counts the pulse
-void wheelPulse()
-{
-  if (pulses == 0) detachInterrupt(digitalPinToInterrupt(WHEEL_INPUT2));
-  pulses++;
-}
-
-void revWheelPulse()
-{
-  if (pulses == 0) detachInterrupt(digitalPinToInterrupt(WHEEL_INPUT));
-  pulses--;
-}
+void wheelPulse() { pulses++; }
 
 void enableInterrupts()
 {
@@ -35,7 +24,6 @@ void enableInterrupts()
 	//is taking place and under what condition it will trigger. In
 	//this case it is looking for when the signal rises
   attachInterrupt(digitalPinToInterrupt(WHEEL_INPUT), wheelPulse, RISING);
-  attachInterrupt(digitalPinToInterrupt(WHEEL_INPUT2), revWheelPulse, RISING);
 }
 
 void disableInterrupts()
@@ -44,7 +32,6 @@ void disableInterrupts()
 	//other actions can be performed with the data
 	//thats been recorded
   detachInterrupt(digitalPinToInterrupt(WHEEL_INPUT));
-  detachInterrupt(digitalPinToInterrupt(WHEEL_INPUT2));
 }
 
 void setup()
@@ -56,14 +43,6 @@ void setup()
   timeold = 0;
   pulses = 0;
   pinMode(WHEEL_INPUT, INPUT);
-  pinMode(WHEEL_INPUT2, INPUT);
-
-  /* while (CAN_OK != CAN.begin(CAN_500KBPS)) {     //initialize can bus : baudrate = 500k
-    Serial.println("CAN BUS shield init failed");
-    Serial.println("Init CAN BUS shield again");
-    delay(100);
-  }
-  Serial.println("CAN BUS shield init ok!") */  
 
   enableInterrupts();  
 }

@@ -31,17 +31,22 @@ int can_delay_cycle;
 // Function Declarations
 void init_CAN();
 void send_CAN_msg(unsigned long id, byte ext, byte len, const byte * msg_buf);
+
+void wheel_speed_routine();
 void right_wheel_pulse();
 void left_wheel_pulse();
-void wss_enable_I(int sensor);
-void wss_disable_I(int sensor);
+void wss_enable_I();
+void wss_disable_I();
+
 void brake_pressure_routine();
+
 void accelerator_position_routine();
+
 void suspension_travel_routine();
 
-mcp2515_can CAN(SPI_CS_PIN); // set CS to pin 9
-
 /********** Setup/Initialization ***************/
+
+mcp2515_can CAN(SPI_CS_PIN); // set CS to pin 9
 
 void setup() {
   Serial.begin(115200);
@@ -53,8 +58,7 @@ void setup() {
   left_pulses - 0;
   pinMode(RIGHT_WHEEL_INPUT, INPUT);
   pinMode(LEFT_WHEEL_INPUT, INPUT);
-  wss_enable_I(0);
-  wss_enable_I(1);
+  wss_enable_I();
 }
 
 /********** Main Loop ***************/
@@ -126,8 +130,7 @@ void wheel_speed_routine()
   if (cycle >= CYCLE_SIZE)
   {
     // stop counting pulses
-    wss_disable_I(0);
-    wss_disable_I(1);
+    wss_disable_I();
 
     // ( 60000.ms * (#pulses / cycle.ms) ) / #pod
     right_rpm = (60000 * right_pulses / cycle) / RELUCTOR;
@@ -151,8 +154,7 @@ void wheel_speed_routine()
     right_pulses = 0;
     left_pulses = 0;
     timeold = millis();
-    wss_enable_I(0);
-    wss_enable_I(1);
+    wss_enable_I();
   }
 }
 
@@ -175,10 +177,10 @@ void left_wheel_pulse() { left_pulses++; }
   Return:   NA
   Pre-conditions: NA
 */
-void wss_enable_I(int sensor) 
+void wss_enable_I() 
 { 
-  if (sensor = 0) attachInterrupt(digitalPinToInterrupt(RIGHT_WHEEL_INPUT), right_wheel_pulse, RISING);
-  else attachInterrupt(digitalPinToInterrupt(LEFT_WHEEL_INPUT), left_wheel_pulse, RISING); 
+  attachInterrupt(digitalPinToInterrupt(RIGHT_WHEEL_INPUT), right_wheel_pulse, RISING);
+  attachInterrupt(digitalPinToInterrupt(LEFT_WHEEL_INPUT), left_wheel_pulse, RISING); 
 }
 
 /*
@@ -189,10 +191,10 @@ void wss_enable_I(int sensor)
   Return:   NA
   Pre-conditions: NA
 */
-void wss_disable_I(int sensor) 
+void wss_disable_I() 
 { 
-  if (sensor = 0) detachInterrupt(digitalPinToInterrupt(RIGHT_WHEEL_INPUT)); 
-  else detachInterrupt(digitalPinToInterrupt(LEFT_WHEEL_INPUT)); 
+  detachInterrupt(digitalPinToInterrupt(RIGHT_WHEEL_INPUT)); 
+  detachInterrupt(digitalPinToInterrupt(LEFT_WHEEL_INPUT)); 
 }
 
 /**/
