@@ -7,8 +7,8 @@
 #define CAN_INT_PIN 2
 #define  CAN_MSG_DELAY 100
 
-#define RELUCTOR 48 // number points of detection (pod) (teeth)
-#define WHEEL_DIAMETER 0.65 // in meters (m)
+#define RELUCTOR 5 // number points of detection (pod) (teeth)
+#define WHEEL_DIAMETER 0.5 // in meters (m)
 #define CYCLE_SIZE 500 // Take calculation each 500ms
 #define RIGHT_WHEEL_INPUT 3 // defining signal pin for wheel speed sensor
 #define LEFT_WHEEL_INPUT 4 // defining signal pin for wheel speed sensor
@@ -16,6 +16,7 @@
 typedef unsigned char byte;
 
 // Global Variables
+// -> wheel speed sensor vars
 volatile int right_pulses, left_pulses;
 unsigned long timeold;
 int cycle;
@@ -25,12 +26,24 @@ byte right_wss_data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 byte left_wss_data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 byte ave_wss_data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
+// -> brake pressure sensor vars
+byte bps_data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+// -> accelerator position sensor vars
+byte aps_data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+// -> suspension travel sensor vars
+byte sts_data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+// -> CAN message vars
 unsigned long can_timeold;
 int can_delay_cycle;
+int message_num = 0;
 
 // Function Declarations
 void init_CAN();
 void send_CAN_msg(unsigned long id, byte ext, byte len, const byte * msg_buf);
+void message_cycle();
 
 void wheel_speed_routine();
 void right_wheel_pulse();
@@ -49,9 +62,11 @@ void suspension_travel_routine();
 mcp2515_can CAN(SPI_CS_PIN); // set CS to pin 9
 
 void setup() {
+  // set the speed of the serial port
   Serial.begin(115200);
 
   init_CAN();
+  can_timeold = 0;
 
   timeold = 0;
   right_pulses = 0;
@@ -66,6 +81,8 @@ void setup() {
 void loop() {
   wheel_speed_routine();
 
+  can_delay_cycle = millis() - can_timeold;
+  if (can_delay_cycle >= CAN_MSG_DELAY) message_cycle();
 }
 
 /********** Function Implementations ***************/
@@ -99,20 +116,58 @@ void init_CAN()
 */
 void send_CAN_msg(unsigned long id, byte ext, byte len, const byte * msg_buf)
 {
-  can_delay_cycle = millis() - can_timeold;
+  byte send_status = CAN.sendMsgBuf(id, ext, len, msg_buf);
 
-  // creating 100ms delay in message transmission without limmiting code from continuing its execution.
-  // ** TODO: may need to fix if causes issues sending other values when function is called.
-  // may be possible to run without delay??
-  if (can_delay_cycle >= CAN_MSG_DELAY)
+  if (send_status == MCP2515_OK) Serial.println("Message Sent Successfully!");
+  else Serial.println("message Error...");
+}
+
+/*
+  Function: The message_cycle() function is used to perpetually cycle through and
+            send messages from the various sensors connected to the front canduino.
+            Each global data array for the sensors is constantly updated from the main
+            loop from which message_cycle() takes the data array and transmits the 
+            message over the CAN network. 
+  Params:   global sensor data buffers - The global variables are used to as containers
+            to allow for indefinite updating of the sensor values. The fuction then reads
+            those values and transmits them.
+  Return:   NA
+  Pre-conditions: CAN must first be initialized.
+*/
+void message_cycle()
+{
+  switch (message_num)
   {
-    byte send_status = CAN.sendMsgBuf(id, ext, len, msg_buf);
-
-    if (send_status == MCP2515_OK) Serial.println("Message Sent Successfully!");
-    else Serial.println("message Error...");
+    case 0:
+      //wheel speed sensor
+      send_CAN_msg(0x55, 0, 2, ave_wss_data);
+      message_num++;
+      break;
     
-    can_timeold = millis();
+    case 1:
+      //brake presure sensor
+      send_CAN_msg(0x66, 0, 2, bps_data);
+      message_num++;
+      break;
+    
+    case 2:
+      //accelerator position sensor
+      send_CAN_msg(0x77, 0, 2, aps_data);
+      message_num++;
+      break;
+
+    case 3:
+      //suspension travel sensor
+      send_CAN_msg(0x88, 0, 2, sts_data);
+      message_num = 0;
+      break;
+
+    default:
+      //reset message number if issue is encountered.
+      message_num = 0;
   }
+
+  can_timeold = millis();
 }
 
 /*
