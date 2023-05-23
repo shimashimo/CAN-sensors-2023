@@ -40,51 +40,6 @@ unsigned long can_timeold;
 int can_delay_cycle;
 int message_num = 0;
 
-// Function Declarations
-void init_CAN();
-void send_CAN_msg(unsigned long id, byte ext, byte len, const byte * msg_buf);
-void message_cycle();
-
-void wheel_speed_routine();
-void right_wheel_pulse();
-void left_wheel_pulse();
-void wss_enable_I();
-void wss_disable_I();
-
-void brake_pressure_routine();
-
-void accelerator_position_routine();
-
-void suspension_travel_routine();
-
-/********** Setup/Initialization ***************/
-
-mcp2515_can CAN(SPI_CS_PIN); // set CS to pin 9
-
-void setup() {
-  // set the speed of the serial port
-  Serial.begin(115200);
-
-  init_CAN();
-  can_timeold = 0;
-
-  timeold = 0;
-  right_pulses = 0;
-  left_pulses - 0;
-  pinMode(RIGHT_WHEEL_INPUT, INPUT);
-  pinMode(LEFT_WHEEL_INPUT, INPUT);
-  wss_enable_I();
-}
-
-/********** Main Loop ***************/
-
-void loop() {
-  wheel_speed_routine();
-
-  can_delay_cycle = millis() - can_timeold;
-  if (can_delay_cycle >= CAN_MSG_DELAY) message_cycle();
-}
-
 /********** Function Implementations ***************/
 
 /* 
@@ -269,6 +224,36 @@ void suspension_travel_routine()
 {
 
 }
+
+/********** Setup/Initialization ***************/
+
+mcp2515_can CAN(SPI_CS_PIN); // set CS to pin 9
+
+void setup() {
+  // set the speed of the serial port
+  Serial.begin(115200);
+
+  init_CAN();
+  can_timeold = 0;
+
+  timeold = 0;
+  right_pulses = 0;
+  left_pulses - 0;
+  pinMode(RIGHT_WHEEL_INPUT, INPUT);
+  pinMode(LEFT_WHEEL_INPUT, INPUT);
+  wss_enable_I();
+}
+
+/********** Main Loop ***************/
+
+void loop() {
+  wheel_speed_routine();
+
+  can_delay_cycle = millis() - can_timeold;
+  if (can_delay_cycle >= CAN_MSG_DELAY) message_cycle();
+}
+
+
 
 
 
