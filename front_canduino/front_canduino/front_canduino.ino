@@ -22,18 +22,24 @@ unsigned long timeold;
 int cycle;
 int right_speed = 0, left_speed = 0;
 int right_rpm = 0, left_rpm = 0;
-byte right_wss_data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-byte left_wss_data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-byte ave_wss_data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+byte right_wss_data[1] = {0x00};
+byte left_wss_data[1] = {0x00};
+byte ave_wss_data[1] = {0x00};
 
 // -> brake pressure sensor vars
-byte bps_data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+#define BPS_MIN_ADC_VAL 0 //TODO: calibrate against car setup
+#define BPS_MAX_ADC_VAL 1023 //TODO: calibrate against car setup
+byte bps_data[1] = {0x00};
 
 // -> accelerator position sensor vars
-byte aps_data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+#define APS_MIN_ADC_VAL 0 //TODO: calibrate against car setup
+#define APS_MAX_ADC_VAL 1023 //TODO: calibrate against car setup
+byte aps_data[1] = {0x00};
 
 // -> suspension travel sensor vars
-byte sts_data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+#define STS_MIN_ADC_VAL 0 //TODO: calibrate against car setup
+#define STS_MAX_ADC_VAL 1023 //TODO: calibrate against car setup
+byte sts_data[1] = {0x00};
 
 // -> CAN message vars
 unsigned long can_timeold;
@@ -140,25 +146,25 @@ void message_cycle()
   {
     case 0:
       //wheel speed sensor
-      send_CAN_msg(0x55, 0, 2, ave_wss_data);
+      send_CAN_msg(0x55, 0, 1, ave_wss_data);
       message_num++;
       break;
     
     case 1:
       //brake presure sensor
-      send_CAN_msg(0x66, 0, 2, bps_data);
+      send_CAN_msg(0x66, 0, 1, bps_data);
       message_num++;
       break;
     
     case 2:
       //accelerator position sensor
-      send_CAN_msg(0x77, 0, 2, aps_data);
+      send_CAN_msg(0x77, 0, 1, aps_data);
       message_num++;
       break;
 
     case 3:
       //suspension travel sensor
-      send_CAN_msg(0x88, 0, 2, sts_data);
+      send_CAN_msg(0x88, 0, 1, sts_data);
       message_num = 0;
       break;
 
@@ -198,8 +204,7 @@ void wheel_speed_routine()
     int ave_speed = (right_speed + left_speed) / 2;
 
     ave_wss_data[0] = (ave_speed & 0xff);
-    ave_wss_data[1] = ((ave_speed >> 2) & 0xff);
-    send_CAN_msg(0x01,0,8,ave_wss_data);
+    // ave_wss_data[1] = ((ave_speed >> 2) & 0xff); note: shouldnt need more than 0-255
 
     // left_wss_data[0] = (left_speed & 0xff);
     // left_wss_data[1] = ((left_speed >> 2) & 0xff);
