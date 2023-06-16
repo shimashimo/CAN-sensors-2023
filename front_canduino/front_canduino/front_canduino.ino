@@ -4,19 +4,20 @@
 
 // Constant Definitions
 #define SPI_CS_PIN 9 // CAN specific pins
-#define CAN_INT_PIN 2
+#define CAN_INT_PIN 2 // CAN interrupt pin
 #define  CAN_MSG_DELAY 100
 
 #define RELUCTOR 5 // number points of detection (pod) (teeth)
 #define WHEEL_DIAMETER 0.5 // in meters (m)
 #define CYCLE_SIZE 500 // Take calculation each 500ms
-#define RIGHT_WHEEL_INPUT 3 // defining signal pin for wheel speed sensor
-#define LEFT_WHEEL_INPUT 4 // defining signal pin for wheel speed sensor
+
 
 typedef unsigned char byte;
 
 // Global Variables
 // -> wheel speed sensor vars
+#define RIGHT_WSS_PIN 3 // signal pin for wss RIGHT wheel
+#define LEFT_WSS_PIN 4 // signal pin for wss LEFT wheel
 volatile int right_pulses, left_pulses;
 unsigned long timeold;
 int cycle;
@@ -29,16 +30,19 @@ byte ave_wss_data[1] = {0x00};
 // -> brake pressure sensor vars
 #define BPS_MIN_ADC_VAL 0 //TODO: calibrate against car setup
 #define BPS_MAX_ADC_VAL 1023 //TODO: calibrate against car setup
+#define BPS_PIN ##
 byte bps_data[1] = {0x00};
 
 // -> accelerator position sensor vars
 #define APS_MIN_ADC_VAL 0 //TODO: calibrate against car setup
 #define APS_MAX_ADC_VAL 1023 //TODO: calibrate against car setup
+#define APS_PIN ##
 byte aps_data[1] = {0x00};
 
 // -> suspension travel sensor vars
 #define STS_MIN_ADC_VAL 0 //TODO: calibrate against car setup
 #define STS_MAX_ADC_VAL 1023 //TODO: calibrate against car setup
+#define STS_PIN ##
 byte sts_data[1] = {0x00};
 
 // -> CAN message vars
@@ -77,8 +81,8 @@ void setup() {
   timeold = 0;
   right_pulses = 0;
   left_pulses - 0;
-  pinMode(RIGHT_WHEEL_INPUT, INPUT);
-  pinMode(LEFT_WHEEL_INPUT, INPUT);
+  pinMode(RIGHT_WSS_PIN, INPUT);
+  pinMode(LEFT_WSS_PIN, INPUT);
   wss_enable_I();
 }
 
@@ -206,8 +210,9 @@ void wheel_speed_routine()
     ave_wss_data[0] = (ave_speed & 0xff);
     // ave_wss_data[1] = ((ave_speed >> 2) & 0xff); note: shouldnt need more than 0-255
 
-    // left_wss_data[0] = (left_speed & 0xff);
-    // left_wss_data[1] = ((left_speed >> 2) & 0xff);
+    left_wss_data[0] = (left_speed & 0xff);
+    right_wss_data[0] = (right_speed & 0xff);
+   
     // send_CAN_msg(0x02,0,8,left_wss_data);
 
     // reset counter and cycle. re-enable interrupts.
@@ -239,8 +244,8 @@ void left_wheel_pulse() { left_pulses++; }
 */
 void wss_enable_I() 
 { 
-  attachInterrupt(digitalPinToInterrupt(RIGHT_WHEEL_INPUT), right_wheel_pulse, RISING);
-  attachInterrupt(digitalPinToInterrupt(LEFT_WHEEL_INPUT), left_wheel_pulse, RISING); 
+  attachInterrupt(digitalPinToInterrupt(RIGHT_WSS_PIN), right_wheel_pulse, RISING);
+  attachInterrupt(digitalPinToInterrupt(LEFT_WSS_PIN), left_wheel_pulse, RISING); 
 }
 
 /*
@@ -253,14 +258,14 @@ void wss_enable_I()
 */
 void wss_disable_I() 
 { 
-  detachInterrupt(digitalPinToInterrupt(RIGHT_WHEEL_INPUT)); 
-  detachInterrupt(digitalPinToInterrupt(LEFT_WHEEL_INPUT)); 
+  detachInterrupt(digitalPinToInterrupt(RIGHT_WSS_PIN)); 
+  detachInterrupt(digitalPinToInterrupt(LEFT_WSS_PIN)); 
 }
 
 /**/
 void brake_pressure_routine()
 {
-
+  int bps_reading = analogRead()
 }
 
 /**/
