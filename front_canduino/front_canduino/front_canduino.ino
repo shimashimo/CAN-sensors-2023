@@ -84,6 +84,10 @@ void setup() {
   pinMode(RIGHT_WSS_PIN, INPUT);
   pinMode(LEFT_WSS_PIN, INPUT);
   wss_enable_I();
+
+  pinMode(BPS_PIN, INPUT);
+  pinMode(APS_PIN, INPUT);
+  pinMode(STS_PIN, INPUT);
 }
 
 /********** Main Loop ***************/
@@ -101,9 +105,6 @@ void loop() {
   Function: Initialize MCP2515 (CAN system) running with a 
             baudrate of 500kb/s. Code will not continue until 
             initialization is OK.
-  Params:   NA
-  Return:   NA
-  Pre-conditions: NA
 */
 void init_CAN()
 {
@@ -121,8 +122,6 @@ void init_CAN()
             byte ext - The extension code for the message. typically 0.
             byte len - The message length. (max 8 bytes)
             const byte * msg_buf - The message byte array to be transmitted over CAN.
-  Return:   NA
-  Pre-conditions: NA
 */
 void send_CAN_msg(unsigned long id, byte ext, byte len, const byte * msg_buf)
 {
@@ -183,9 +182,6 @@ void message_cycle()
 /*
   Function: Handles the calculation of the rpm and speed in KMH of the wheels, then
             transmits the data over the can network.
-  Params:   NA
-  Return:   NA
-  Pre-conditions: NA
 */
 void wheel_speed_routine()
 {
@@ -207,11 +203,11 @@ void wheel_speed_routine()
 
     int ave_speed = (right_speed + left_speed) / 2;
 
-    ave_wss_data[0] = (ave_speed & 0xff);
+    ave_wss_data[0] = ave_speed & 0xff;
     // ave_wss_data[1] = ((ave_speed >> 2) & 0xff); note: shouldnt need more than 0-255
 
-    left_wss_data[0] = (left_speed & 0xff);
-    right_wss_data[0] = (right_speed & 0xff);
+    left_wss_data[0] = left_speed & 0xff;
+    right_wss_data[0] = right_speed & 0xff;
    
     // send_CAN_msg(0x02,0,8,left_wss_data);
 
@@ -226,9 +222,6 @@ void wheel_speed_routine()
 /*
   Function: ISR for counting wheel pulses on signal detection. When the hall effect
             sensor detects a rising edge, trigger the ISR to increment pulses.
-  Params:   NA
-  Return:   NA
-  Pre-conditions: NA
 */
 void right_wheel_pulse() { right_pulses++; }
 void left_wheel_pulse() { left_pulses++; }
@@ -236,11 +229,6 @@ void left_wheel_pulse() { left_pulses++; }
 /*
   Function: Enables the interrupt for pulse count. Attaches signal pin from WSS
             to trigger ISR on a rising signal.
-  Params:   int sensor - Defining the left and right sensors
-            0 = right wss
-            1 = left wss
-  Return:   NA
-  Pre-conditions: NA
 */
 void wss_enable_I() 
 { 
@@ -250,11 +238,6 @@ void wss_enable_I()
 
 /*
   Function: Disables the interrupt for pulse count.
-  Params:   int sensor - Defining the left and right sensors
-            0 = right wss
-            1 = left wss
-  Return:   NA
-  Pre-conditions: NA
 */
 void wss_disable_I() 
 { 
@@ -262,16 +245,41 @@ void wss_disable_I()
   detachInterrupt(digitalPinToInterrupt(LEFT_WSS_PIN)); 
 }
 
-/**/
+/*
+  Function: Brake pressure routine reads in the analog signal
+            from the brake pressure sensor, taking the value
+            returned from the analog to digital converter (ADC)
+            and converting the it to a percentage out of 100 
+            based on where the value exists between the 
+            MIN and MAX sensor values.
+*/
 void brake_pressure_routine()
 {
-  int bps_reading = analogRead()
+  int bps_reading = analogRead(BPS_PIN);
+  int bps_corr_reading = bps_reading - BPS_MIN_ADC_VAL;
+
+  int percentage = (100 * bps_corr_reading) / BPS_MAX_ADC_VAL;
+
+  bps_data[0] = percentage & 0xff;
 }
 
-/**/
+/*
+  Function: Accelerator position routine reads in the analog signal
+            from the accelerator potentiometer sensor, taking the value
+            returned from the analog to digital converter (ADC)
+            and converting the it to a percentage out of 100 
+            based on where the value exists between the 
+            MIN and MAX sensor values.
+*/
 void accelerator_position_routine()
 {
+  // TODO: using two sensors, determine whether sensors are reasonably equal
+  int aps_reading = analogRead(APS_PIN);
+  int aps_corr_reading = aps_reading - APS_MIN_ADC_VAL;
 
+  int percentage = (100 * aps_corr_reading) / APS_MAX_ADC_VAL;
+
+  aps_data[0] = percentage & 0xff;
 }
 
 /**/
