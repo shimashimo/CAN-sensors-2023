@@ -94,6 +94,8 @@ void setup() {
 
 void loop() {
   wheel_speed_routine();
+  brake_pressure_routine();
+  accelerator_position_routine();
 
   can_delay_cycle = millis() - can_timeold;
   if (can_delay_cycle >= CAN_MSG_DELAY) message_cycle();
