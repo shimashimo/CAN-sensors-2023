@@ -2,20 +2,21 @@
 #include "mcp2515_can.h"
 #include "mcp2515_can_dfs.h"
 
-// Constant Definitions
+typedef unsigned char byte;
+
+// Global Variables and Constants
+// -> CAN message vars
 #define SPI_CS_PIN 9 // CAN specific pins
 #define CAN_INT_PIN 2 // CAN interrupt pin
 #define  CAN_MSG_DELAY 100
+unsigned long can_timeold;
+int can_delay_cycle;
+int message_num = 0;
 
+// -> wheel speed sensor vars
 #define RELUCTOR 5 // number points of detection (pod) (teeth)
 #define WHEEL_DIAMETER 0.5 // in meters (m)
 #define CYCLE_SIZE 500 // Take calculation each 500ms
-
-
-typedef unsigned char byte;
-
-// Global Variables
-// -> wheel speed sensor vars
 #define RIGHT_WSS_PIN 3 // signal pin for wss RIGHT wheel
 #define LEFT_WSS_PIN 4 // signal pin for wss LEFT wheel
 volatile int right_pulses, left_pulses;
@@ -44,11 +45,6 @@ byte aps_data[1] = {0x00};
 #define STS_MAX_ADC_VAL 1023 //TODO: calibrate against car setup
 #define STS_PIN ##
 byte sts_data[1] = {0x00};
-
-// -> CAN message vars
-unsigned long can_timeold;
-int can_delay_cycle;
-int message_num = 0;
 
 // Function Declarations
 void init_CAN();
