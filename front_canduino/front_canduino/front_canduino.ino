@@ -3,6 +3,7 @@
 #include "mcp2515_can_dfs.h"
 
 typedef unsigned char byte;
+const double PI = 3.14159265358979;
 
 // Global Variables and Constants
 // -> CAN message vars
@@ -43,8 +44,11 @@ byte aps_data[1] = {0x00};
 // -> suspension travel sensor vars
 #define STS_MIN_ADC_VAL 0 //TODO: calibrate against car setup
 #define STS_MAX_ADC_VAL 1023 //TODO: calibrate against car setup
+const int STS_ADC_RANGE = STS_MAX_ADC_VAL - STS_MIN_ADC_VAL;
+const int STS_ADC_R_FACTOR = STS_ADC_RANGE / (2 * PI);
+#define STS_SPOOL_RADIUS 30 //TODO: define spool radius in millimeters (mm)
 #define STS_PIN ##
-byte sts_data[1] = {0x00};
+byte sts_data[2] = {0x00, 0x00};
 
 // Function Declarations
 void init_CAN();
@@ -280,10 +284,27 @@ void accelerator_position_routine()
   aps_data[0] = percentage & 0xff;
 }
 
-/**/
+/*
+  Function: Suspension travel sensor reads in an analog signal from
+            the suspension potentiometer sensor. The reading is then
+            subtracted from the minimum sensor value calculating a
+            "digital" arc length. From the digital arc length we can
+            find the angle of rotation and thus calculate the arc length
+            the spool of line (attached to the suspension) traveled
+            calculating the resulting travel amount.
+
+            Travel is calculated in millimeters (mm) of travel.
+*/
 void suspension_travel_routine()
 {
+  int sts_reading = analogRead(STS_PIN);
 
+  double travel_angle = (sts_reading - STS_MIN_ADC_VAL) / STS_ADC_R_FACTOR;
+
+  int travel_mm = travel_angle * STS_SPOOL_RADIUS;
+
+  sts_data[0] = travel_mm & 0xff;
+  sts_data[1] = (travel_mm >> 8) & 0xff;
 }
 
 
