@@ -26,7 +26,7 @@ void loop() {
   if (send_status == MCP2515_OK) 
   {
     Serial.println("Message Sent Successfully!");
-  }
+  } else Serial.println("uh oh...");
 
   delay(100);
 }
