@@ -38,8 +38,10 @@ byte bps_data[1] = {0x00};
 // -> accelerator position sensor vars
 #define APS_MIN_ADC_VAL 0 //TODO: calibrate against car setup
 #define APS_MAX_ADC_VAL 1023 //TODO: calibrate against car setup
-#define APS_PIN ##
-byte aps_data[1] = {0x00};
+#define APS1_PIN ##
+#define APS2_PIN ##
+byte aps_data[2] = {0x00,0x00}; //{sensor1, sensor2}
+
 
 // -> suspension travel sensor vars
 #define STS_MIN_ADC_VAL 0 //TODO: calibrate against car setup
@@ -276,12 +278,16 @@ void brake_pressure_routine()
 void accelerator_position_routine()
 {
   // TODO: using two sensors, determine whether sensors are reasonably equal
-  int aps_reading = analogRead(APS_PIN);
-  int aps_corr_reading = aps_reading - APS_MIN_ADC_VAL;
+  int aps1_reading = analogRead(APS1_PIN);
+  int aps1_corr_reading = aps1_reading - APS_MIN_ADC_VAL;
+  int aps2_reading = analogRead(APS2_PIN);
+  int aps2_corr_reading = aps2_reading - APS_MIN_ADC_VAL;
 
-  int percentage = (100 * aps_corr_reading) / APS_MAX_ADC_VAL;
+  int percentage1 = (100 * aps1_corr_reading) / APS_MAX_ADC_VAL;
+  int percentage2 = (100 * aps2_corr_reading) / APS_MAX_ADC_VAL;
 
-  aps_data[0] = percentage & 0xff;
+  aps_data[0] = percentage1 & 0xff;
+  aps_data[1] = percentage2 & 0xff;
 }
 
 /*
