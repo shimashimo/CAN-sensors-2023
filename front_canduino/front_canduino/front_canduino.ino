@@ -25,9 +25,7 @@ unsigned long timeold;
 int cycle;
 int right_speed = 0, left_speed = 0;
 int right_rpm = 0, left_rpm = 0;
-byte right_wss_data[1] = {0x00};
-byte left_wss_data[1] = {0x00};
-byte ave_wss_data[1] = {0x00};
+byte wss_data[3] = {0x00,0x00,0x00}; //{average, right, left}
 
 // -> brake pressure sensor vars
 #define BPS_MIN_ADC_VAL 0 //TODO: calibrate against car setup
@@ -48,9 +46,10 @@ byte aps_data[2] = {0x00,0x00}; //{sensor1, sensor2}
 #define STS_MAX_ADC_VAL 1023 //TODO: calibrate against car setup
 const int STS_ADC_RANGE = STS_MAX_ADC_VAL - STS_MIN_ADC_VAL;
 const int STS_ADC_R_FACTOR = STS_ADC_RANGE / (2 * PI);
-#define STS_SPOOL_RADIUS 30 //TODO: define spool radius in millimeters (mm)
-#define STS_PIN ##
-byte sts_data[2] = {0x00, 0x00};
+#define STS_SPOOL_RADIUS ## //TODO: define spool radius in millimeters (mm)
+#define RIGHT_STS_PIN ##
+#define LEFT_STS_PIN ##
+byte sts_data[4] = {0x00,0x00,0x00,0x00}; //{R lowByte, R highByte, L lowByte, L highByte}
 
 // Function Declarations
 void init_CAN();
@@ -88,8 +87,12 @@ void setup() {
   wss_enable_I();
 
   pinMode(BPS_PIN, INPUT);
-  pinMode(APS_PIN, INPUT);
-  pinMode(STS_PIN, INPUT);
+
+  pinMode(APS1_PIN, INPUT);
+  pinMode(APS2_PIN, INPUT);
+
+  pinMode(RIGHT_STS_PIN, INPUT);
+  pinMode(LEFT_STS_PIN, INPUT);
 }
 
 /********** Main Loop ***************/
@@ -153,7 +156,7 @@ void message_cycle()
   {
     case 0:
       //wheel speed sensor
-      send_CAN_msg(0x55, 0, 1, ave_wss_data);
+      send_CAN_msg(0x55, 0, 3, wss_data);
       message_num++;
       break;
     
@@ -165,13 +168,13 @@ void message_cycle()
     
     case 2:
       //accelerator position sensor
-      send_CAN_msg(0x77, 0, 1, aps_data);
+      send_CAN_msg(0x77, 0, 2, aps_data);
       message_num++;
       break;
 
     case 3:
       //suspension travel sensor
-      send_CAN_msg(0x88, 0, 1, sts_data);
+      send_CAN_msg(0x88, 0, 4, sts_data);
       message_num = 0;
       break;
 
@@ -207,13 +210,9 @@ void wheel_speed_routine()
 
     int ave_speed = (right_speed + left_speed) / 2;
 
-    ave_wss_data[0] = ave_speed & 0xff;
-    // ave_wss_data[1] = ((ave_speed >> 2) & 0xff); note: shouldnt need more than 0-255
-
-    left_wss_data[0] = left_speed & 0xff;
-    right_wss_data[0] = right_speed & 0xff;
-   
-    // send_CAN_msg(0x02,0,8,left_wss_data);
+    wss_data[0] = ave_speed & 0xff;
+    wss_data[1] = right_speed & 0xff;
+    wss_data[2] = left_speed & 0xff;
 
     // reset counter and cycle. re-enable interrupts.
     right_pulses = 0;
@@ -303,14 +302,19 @@ void accelerator_position_routine()
 */
 void suspension_travel_routine()
 {
-  int sts_reading = analogRead(STS_PIN);
+  int right_sts_reading = analogRead(RIGHT_STS_PIN);
+  int left_sts_reading = analogRead(LEFT_STS_PIN);
 
-  double travel_angle = (sts_reading - STS_MIN_ADC_VAL) / STS_ADC_R_FACTOR;
+  double right_travel_angle = (right_sts_reading - STS_MIN_ADC_VAL) / STS_ADC_R_FACTOR;
+  double left_travel_angle = (left_sts_reading - STS_MIN_ADC_VAL) / STS_ADC_R_FACTOR;
 
-  int travel_mm = travel_angle * STS_SPOOL_RADIUS;
+  int right_travel_mm = right_travel_angle * STS_SPOOL_RADIUS;
+  int left_travel_mm = left_travel_angle * STS_SPOOL_RADIUS;
 
-  sts_data[0] = travel_mm & 0xff;
-  sts_data[1] = (travel_mm >> 8) & 0xff;
+  sts_data[0] = right_travel_mm & 0xff;
+  sts_data[1] = (right_travel_mm >> 8) & 0xff;
+  sts_data[2] = left_travel_mm & 0xff;
+  sts_data[3] = (left_travel_mm >> 8) & 0xff;
 }
 
 
