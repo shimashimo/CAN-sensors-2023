@@ -42,7 +42,6 @@ unsigned long aps_CAN_ID = 0x02; // accelerator position sensor CAN ID
 #define THROTTLE_PIN ##
 byte Throttle_signal_data[1] = {0x00};
 
-
 // Function Declarations
 void init_CAN();
 void send_CAN_msg(unsigned long id, byte ext, byte len, const byte * msg_buf);
@@ -56,7 +55,6 @@ void Start_Check();
 
 void Shift();
 void Throttle();
-
 
 /********** Setup/Initialization ***************/
 
