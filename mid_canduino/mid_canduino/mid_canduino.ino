@@ -1,44 +1,61 @@
 #include <SPI.h>
 #include "mcp2515_can.h"
 #include "mcp2515_can_dfs.h"
-/*
-In the 'Library Manager' search for:
 
-  CAN_BUS_Shield by Seeed Studio
-
-and install library inside arduino IDE.
-This is required for the code to compile
-and upload to an arduino.
-
-If you have any kind of arduino and want to try
-compiling or uploading your code go ahead!
-*/
+typedef unsigned char byte;
 
 // -> CAN message vars
 #define SPI_CS_PIN 9 // CAN specific pins
 #define CAN_INT_PIN 2 // CAN interrupt pin
+unsigned long canId = 0x00; // CAN message ID
+byte msg_length = 0; // length of message from CAN
+byte msg_buffer[8]; // buffer for storing message from CAN
 #define  CAN_MSG_DELAY 100
 unsigned long can_timeold;
 int can_delay_cycle;
 int message_num = 0;
 
 // Global Variables and Constants
-/* Below, define any constants or variables you might need for
-   passing data through CAN. Any variables specific to a function
-   implementation should be defined within your function.*/
+// -> fuel pump status vars
+#define FUEL_SIGNAL_PIN ##
+byte Fuel_Pump_OK_data[1] = {0x00};
 
-// Fuel Pump OK
+// -> fan status vars
+#define FAN_SIGNAL_PIN ##
+byte Fan_OK_data[1] = {0x00};
 
-// Fan OK
+// -> brake status vars
+#define BRAKE_SIGNAL_PIN ##
+byte Brake_OK_data[1] = {0x00};
 
-// Brake OK
+// -> start status vars
+#define START_SIGNAL_PIN ##
+byte Start_OK_data[1] = {0x00};
 
-// Start OK
+// -> shifting functionality vars
+unsigned long shift_CAN_ID = 0x01; // shift message CAN ID
+#define SHIFT_ACTUATOR_PIN ##
+byte shift_signal_data[1] = {0x00};
+
+// -> throttle functionality vars
+unsigned long aps_CAN_ID = 0x02; // accelerator position sensor CAN ID
+#define THROTTLE_PIN ##
+byte Throttle_signal_data[1] = {0x00};
 
 
 // Function Declarations
-/* Below, for any new function implementation your create, put the
-   function signature line. This is necessary for the code to compile.*/
+void init_CAN();
+void send_CAN_msg(unsigned long id, byte ext, byte len, const byte * msg_buf);
+void message_cycle();
+void CAN_message_handler();
+
+void Fuel_Pump_Check();
+void Fan_Check();
+void Brake_Check();
+void Start_Check();
+
+void Shift();
+void Throttle();
 
 
 /********** Setup/Initialization ***************/
@@ -46,41 +63,31 @@ int message_num = 0;
 mcp2515_can CAN(SPI_CS_PIN); // set CS to pin 9
 
 void setup() {
-  /* Anything that might need to be initialized like setting the
-     pinmode to input or output can be put inside setup.*/
-
   // set the speed of the serial port
   Serial.begin(115200);
 
   init_CAN();
   can_timeold = 0;
 
+  pinMode(FUEL_SIGNAL_PIN, INPUT);
+  pinMode(FAN_SIGNAL_PIN, INPUT);
+  pinMode(BRAKE_SIGNAL_PIN, INPUT);
+  pinMode(START_SIGNAL_PIN, INPUT);
+
+  pinMode(SHIFT_ACTUATOR_PIN, OUTPUT);
+  pinMode(THROTTLE_PIN, OUTPUT);
 }
 
 /********** Main Loop ***************/
 
 void loop() {
-  /* Anything you want run forever, put inside loop.*/
-
-
-
+  CAN_message_handler();
 
   can_delay_cycle = millis() - can_timeold;
   if (can_delay_cycle >= CAN_MSG_DELAY) message_cycle();
 }
 
 /********** Function Implementations ***************/
-/* Below, put any of your function implementations*/
-
-
-
-
-
-
-
-
-
-
 /* 
   Function: Initialize MCP2515 (CAN system) running with a 
             baudrate of 500kb/s. Code will not continue until 
@@ -120,7 +127,6 @@ void send_CAN_msg(unsigned long id, byte ext, byte len, const byte * msg_buf)
   Params:   global sensor data buffers - The global variables are used to as containers
             to allow for indefinite updating of the sensor values. The fuction then reads
             those values and transmits them.
-  Return:   NA
   Pre-conditions: CAN must first be initialized.
 */
 void message_cycle()
@@ -153,4 +159,62 @@ void message_cycle()
   }
 
   can_timeold = millis();
+}
+
+/*
+  Function: The message_read() function gets the CAN ID of the current message on the
+            CAN network and routes the program to the apropriate handler.
+*/
+void CAN_message_handler()
+{
+  if (CAN_MSGAVAIL == CAN.checkReceive())
+  {
+    canId = CAN.getCanId();
+    CAN.readMsgBuf(&msg_length, msg_buffer)
+
+    switch (canId)
+    {
+      case shift_CAN_ID:
+        shift();
+        break;
+
+      case aps_CAN_ID:
+        throttle();
+        break;
+
+      default:
+        // do nothing if not an accepted CAN ID
+        break;
+    }
+  }
+}
+
+/*
+  Function: The shift function reads the data message sent by the steering
+            wheel canduino and triggers the actuator attached to the shifter
+            such that the gear is shifted up or down relative to what value
+            is passed in the CAN message.
+*/
+void shift()
+{
+  // verify that we are handling the correct task
+  if (canId == shift_CAN_ID && msg_length == 1)
+  {
+    // shift function implementation
+  }
+}
+
+/*
+  Function: The throttle function reads the data message sent by the front 
+            canduino and rotates the throttle motor to the position
+            relative to the value passed by the aps (accelerator position sensor)
+            in the CAN message.
+*/
+void throttle()
+{
+  // verify that we are handling the correct task
+  if (canId == aps_CAN_ID && msg_length == 2)
+  {
+    // throttle function implementation
+  }
 }
