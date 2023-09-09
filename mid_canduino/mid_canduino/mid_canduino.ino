@@ -32,6 +32,10 @@ byte Brake_OK_data[1] = {0x00};
 #define START_SIGNAL_PIN ##
 byte Start_OK_data[1] = {0x00};
 
+// -> current sensor vars
+#define CURRENT_SENSOR_PIN ##
+byte Current_Sensor_Voltage_Data[2] ={0x00,0x00};
+
 // -> shifting functionality vars
 unsigned long shift_CAN_ID = 0x01; // shift message CAN ID
 #define SHIFT_ACTUATOR_PIN ##
@@ -53,6 +57,7 @@ void Fan_Check();
 void Brake_Check();
 void Start_Check();
 
+void Current_Sensor_Status();
 void Shift();
 void Throttle();
 
@@ -188,6 +193,26 @@ void CAN_message_handler()
 }
 
 /*
+  Function: The current sensor status function takes inductive readings of the
+            voltage running through the cars (low voltage system I think) and
+            verifies the stability of the line.
+*/
+void Current_Sensor_Status()
+{
+  // Reads voltage output from sensor
+  int GLV_current_read = analogRead(GLV_current_sensor_PIN);
+  int GLV_correction_read = GLV_current_read - GLV_current_sensor_MIN;
+
+  //Converts voltage read from sensor and calculates current going through sensor
+  float GLV_current_sensor_voltage = (5.0 * GLV_correction_read) / 1023;
+  float GLV_current_sensor_current = (GLV_current_sensor_voltage - 2.5)*(1/0.0667);
+
+  Current_Sensor_Voltage_Data[0] = GLV_current_sensor_current & 0xff;
+  Current_Sensor_Voltage_Data[1] = (GLV_current_sensor_current >> 8) & 0xff;
+}
+
+
+/*
   Function: The shift function reads the data message sent by the steering
             wheel canduino and triggers the actuator attached to the shifter
             such that the gear is shifted up or down relative to what value
@@ -207,12 +232,17 @@ void shift()
             canduino and rotates the throttle motor to the position
             relative to the value passed by the aps (accelerator position sensor)
             in the CAN message.
+  Params:   unsigned long CanId - The ID of the incoming message used for verification.
+            byte msg_length - The length of the incoming message (number of bytes of data).
+            byte msg_buffer[0] - Accelerator position value from CAN is a 1 byte value
+            stored to the first index of msg_buffer.
 */
 void throttle()
 {
   // verify that we are handling the correct task
   if (canId == aps_CAN_ID && msg_length == 2)
   {
-    // throttle function implementation
+    int acellerator_position = ((msg_buffer[0] / 100.0) * 255);
+    analogwrite(THROTTLE_PIN,accelerator_position);
   }
 }
