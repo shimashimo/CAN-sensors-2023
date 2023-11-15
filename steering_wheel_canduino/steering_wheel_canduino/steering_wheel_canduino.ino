@@ -1,6 +1,7 @@
 #include <SPI.h>
 #include "mcp2515_can.h"
 #include "mcp2515_can_dfs.h"
+#include "JC_Button.h"  // library for input buttons
 
 typedef unsigned char byte;
 
@@ -23,6 +24,22 @@ int message_num = 0;
 // If a sensor/button/component needs to send a CAN message, it
 // will need a byte variable. Define any other constants or variables 
 // needed that can be defined outside of a function.
+
+// -> shift button vars
+#define SHIFT_UP_BUTTON_PIN = 2;
+#define SHIFT_DOWN_BUTTON_PIN = 3;
+bool shift_up_flag = false;
+bool shift_down_flag = false;
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 200;
+
+// -> engine start vars
+#define ENGINE_START_BUTTON_PIN ##
+Button engine_start_button(ENGINE_START_BUTTON_PIN, 100, true, true); //btn(pin, debounceTime, pullupEnabled, logicInvert)
+
+// -> motor start vars
+#define MOTOR_START_BUTTON_PIN ##
+Button motor_start_button(MOTOR_START_BUTTON_PIN, 100, true, true);
 
 // -> fuel pump status vars
 #define FUEL_SIGNAL_PIN ##
@@ -63,7 +80,7 @@ void CAN_message_handler();
 // TODO: for any functions you write at the base of the file, define the
 // signature of the function here for everything to compile and be happy
 
-void Shift();
+void shift();
 
 /********** Setup/Initialization ***************/
 
@@ -78,6 +95,17 @@ void setup() {
 
   // TODO: Use setup for initializing the state of any variables
   // or initializing pinmodes/pin read or write. Anything that needs setup
+
+  // engine and motor button setups
+  engine_start_button.begin();
+  motor_start_button.begin();
+
+  // shift button setups
+  pinMode( SHIFT_UP_BUTTON_PIN, INPUT_PULLUP );
+  attachInterrupt( digitalPinToInterrupt(SHIFT_UP_BUTTON_PIN), shift_up, FALLING ); // Sending signal on press, not release for some reason.
+  pinMode( SHIFT_DOWN_BUTTON_PIN, INPUT_PULLUP );
+  attachInterrupt( digitalPinToInterrupt(SHIFT_DOWN_BUTTON_PIN), shift_down, FALLING ); // Sending signal on press, not release for some reason.
+  
 }
 
 /********** Main Loop ***************/
@@ -87,6 +115,39 @@ void loop() {
 
   can_delay_cycle = millis() - can_timeold;
   if (can_delay_cycle >= CAN_MSG_DELAY) message_cycle();
+
+
+  /* Engine/Motor Start Buttons*/
+  engine_start_button.read();
+
+  // send CAN message if start engine button has been pushed
+  if(engine_start_button.wasReleased()) //returns true on falling edge, when there's a change in read() value
+  {
+    // send engine start CAN message
+    // send_CAN_msg(); //TODO: set up messageID, 
+  }
+  // send CAN message if start motor button has been pushed
+  if(motor_start_button.wasReleased())
+  {
+    // send motor start CAN message
+    // send_CAN_msg(); //TODO: set up messageID, 
+  }
+
+  /*Shift messages*/
+  if(shift_up_flag)
+  {
+    // TODO: Implement rpm checking to know if shift up should occur (is rpm > Min_value_rpm)
+    // reset flag
+    shift_up_flag = false;
+    //send can_message 
+  }
+  if(shift_down_flag)
+  {
+    // TODO: Implement rpm checking to know if shift down should occur (is rpm < Max_value_rpm)
+    // reset flag
+    shift_down_flag = false;
+    //send can message
+  }
 }
 
 /********** Function Implementations ***************/
@@ -103,6 +164,8 @@ void init_CAN()
     delay(100);
   }
   Serial.println("CAN init ok!");
+
+  
 }
 
 /* 
@@ -165,7 +228,7 @@ void message_cycle()
 
 /*
   Function: The message_read() function gets the CAN ID of the current message on the
-            CAN network and routes the program to the apropriate handler.
+            CAN network and routes the program to the appropriate handler.
 */
 void CAN_message_handler()
 {
@@ -200,17 +263,34 @@ void CAN_message_handler()
 }
 
 /*
-  Function: The shift function reads the data message sent by the steering
-            wheel canduino and triggers the actuator attached to the shifter
-            such that the gear is shifted up or down relative to what value
-            is passed in the CAN message.
+  Function: The shift_up function is an ISR that sends a CAN message from the steering wheel canduino,
+            to the mid canduino to shift the gear up.
 */
-void shift()
+void shift_up()
 {
-  // verify that we are handling the correct task
-  if (canId == shift_CAN_ID && msg_length == 1)
-  {
-    // shift function implementation
-  }
+  if(debounce()) shift_up_flag = true;
 }
 
+/*
+  Function: The shift_up function is an ISR that sends a CAN message from the steering wheel canduino,
+            to the mid canduino to shift the gear down.
+*/
+void shift_down()
+{
+  if(debounce()) shift_down_flag = true;
+}
+
+/*
+  Function: The debounce() function debounces the buttons for the shift up and down ISR functions. 
+            The ISRs are still called on each "bounce", but only when debounced time has passed will it complete an action.
+*/
+bool debounce()
+{
+  // check to see if enough time has passed
+  // since the last signal to ignore any bounce:
+  if ((millis() - lastDebounceTime) > bounceDelay) {
+    lastDebounceTime = millis();
+    return true;
+  }
+  return false;
+}
