@@ -16,7 +16,15 @@ unsigned long can_timeold;
 int can_delay_cycle;
 int message_num = 0;
 
+unsigned char len = 0; // READ message Length
+unsigned char rxBuf[8]; // READ buffer for storing message
+
 // Global Variables and Constants
+// Data containers for menu sceen data
+unsigned char wheelSpeed[8];
+unsigned char engineTemp[8];
+unsigned char stateOfCharge[8];
+//...
 
 // TODO: The defines are used for the pin number for the associated
 // sensor/button/component is attached to onn the canduino.
@@ -79,8 +87,12 @@ void CAN_message_handler();
 
 // TODO: for any functions you write at the base of the file, define the
 // signature of the function here for everything to compile and be happy
-
 void shift();
+void CAN_read_from_network();
+char* switch_data_store();
+void shift_up();
+void shift_down();
+void debounce();
 
 /********** Setup/Initialization ***************/
 
@@ -250,16 +262,74 @@ void CAN_message_handler()
       case aps_CAN_ID:
         throttle();
         break;
-/*
+      /*
       case some_CAN_ID:
         some_event_handler_function();
         break;
-*/
+      */
       default:
         // do nothing if not an accepted CAN ID
         break;
     }
   }
+}
+
+/*
+  Function: The CAN_read_from_network() function is used to read the current message off
+            off the CAN network and route the incoming message to be stored in its respective
+            container. ie reading the wheel speed ID, then storing/updating the message buffer
+            to the wheel speed container variable. 
+*/
+void CAN_read_from_network()
+{
+  if (CAN_MSGAVAIL == CAN.checkReceive())
+  {
+    unsigned long canId = CAN.getCanId();
+    CAN.readMsgBuf(&len, rxBuf); 
+  }
+
+  char* data_container = switch_data_store();
+  if (data_container == NULL) 
+  {
+    Serial.println("error setting the data container...\n");
+    return;
+  }
+
+  for(i=0; i < len; i++)
+  {
+    dataVar_p[i] = rxBuf[i];
+  }
+}
+
+/*
+  Function: HELPER method used in the CAN_read_from_network() function. This method
+            is used to select the appropriate container for storing the data read
+            from the incoming CAN message. the method returns a pointer to the data
+            container that is used for storing data in the read function.
+*/
+char* switch_data_store()
+{
+  char* dataVar_p;
+  switch(canId)
+  {
+    case WS_ID:
+      //wheel speed
+      dataVar_p = wheelSpeed;
+      break;
+
+    case ET_ID:
+      //engine temp
+      dataVar_p = engineTemp;
+      break;
+
+    //...
+
+    default:
+      dataVar_p = NULL;
+      break;
+  }
+
+  return dataVar_p;
 }
 
 /*
