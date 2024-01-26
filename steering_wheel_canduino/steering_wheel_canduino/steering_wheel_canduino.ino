@@ -89,7 +89,7 @@ void CAN_message_handler();
 // signature of the function here for everything to compile and be happy
 void shift();
 void CAN_read_from_network();
-char* switch_data_store();
+void switch_data_store();
 void shift_up();
 void shift_down();
 void debounce();
@@ -288,8 +288,9 @@ void CAN_read_from_network()
     CAN.readMsgBuf(&len, rxBuf); 
   }
 
-  char* data_container = switch_data_store();
-  if (data_container == NULL) 
+  char* data_container = nullptr;
+  switch_data_store(canId, data_container);
+  if (data_container == nullptr) 
   {
     Serial.println("error setting the data container...\n");
     return;
@@ -297,7 +298,7 @@ void CAN_read_from_network()
 
   for(i=0; i < len; i++)
   {
-    dataVar_p[i] = rxBuf[i];
+    data_container[i] = rxBuf[i];
   }
 }
 
@@ -307,29 +308,26 @@ void CAN_read_from_network()
             from the incoming CAN message. the method returns a pointer to the data
             container that is used for storing data in the read function.
 */
-char* switch_data_store()
+void switch_data_store(unsigned long CAN_ID, char*& data_container)
 {
-  char* dataVar_p;
-  switch(canId)
+  switch(CAN_ID)
   {
     case WS_ID:
       //wheel speed
-      dataVar_p = wheelSpeed;
+      data_container = wheelSpeed;
       break;
 
     case ET_ID:
       //engine temp
-      dataVar_p = engineTemp;
+      data_container = engineTemp;
       break;
 
     //...
 
     default:
-      dataVar_p = NULL;
+      *data_container = nullptr;
       break;
   }
-
-  return dataVar_p;
 }
 
 /*
