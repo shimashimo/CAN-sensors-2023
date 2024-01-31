@@ -1,0 +1,41 @@
+        [What will be displayed]               [Example 1:1 16x2, numbers are initial guesses]
+
+Menu 1: Main Display (Default)  [KMH = Kilometers per Hour | RPM = Revolutions per Minute]
+        +-----------------------------+        +----------------+    +----------------+
+        |Speed           |RPM         |        |25 KMH | 4000RPM|    |100KMH |13500RPM|
+        |DriveMode(Gear?)|ENGINE TEMP |        |Gear:1 | 35°C   |    |Gear:R | 45°C   |
+        +-----------------------------+        +----------------+    +----------------+
+
+
+Menu 2: Battery Status | GLV Current, GLV Battery Voltage, SoC [SoC = State of Charge]
+        +-----------------------------+        +----------------+    
+        |SoC           | GLV Current  |        |## V   | ## A   |    
+        |GLV Voltage   | BATT TEMP?   |        |## V   | 65°C   |    
+        +-----------------------------+        +----------------+    
+
+
+Menu 3: Brake Pressure (Front + Rear) and Pedal Position (Potentiometers) [Should the POT measurements be converted to something?]
+        +-----------------------------+        +----------------+    
+        |Front Pressure| POT 1        |        |### PSI|10000 Ω |    
+        |Rear Pressure | POT 2        |        |### PSI|10000 Ω |    
+        +-----------------------------+        +----------------+    
+
+
+Menu 4: Suspension Travel Sensors
+        +-----------------------------+        +----------------+    
+        |Front Left| Front Right      |        | # cm  | #cm    |
+        |Rear Left | Rear Right       |        | # cm  | #cm    |    
+        +-----------------------------+        +----------------+  
+
+
+Menu 5: Accumulator Temperatures
+        +-----------------------------+        +----------------+    +----------------+
+        |ACC Temps     | TEMP         |        |## V   | ## A   |    |100KMH |14000RPM|
+        |GLV Voltage   | ACC TEMP     |        |## V   | 65°C   |    |Gear:R | 65°C   |
+        +-----------------------------+        +----------------+    +----------------+
+
+Menu 6: Accumulator Cell Voltages (Don't really know what to do for this one)
+        +-----------------------------+        +----------------+    
+        |Voltages|Voltages|Voltages   |        |V1|V2|V3|V4|V5  |  
+        |Voltages|Voltages|Voltages   |        |V#|V#|V         |
+        +-----------------------------+        +----------------+
