@@ -25,7 +25,9 @@ void loop()
 {
   
 }
---------------------------------
+
+---------------------------------------
+
 void  KMH_Gear_RPM()
 {
     // 13 Characters: Km/Hr: ##
@@ -103,9 +105,14 @@ void  Temp_display()
 
 void display_state()
 {
-  int voltage_bndry = (int)(1024 / dial_steps);
-  int Rotary_input_values = analogread();
+  int Rotary_output_value;
+  int dial_steps = 12; // even voltage interval over ## of dial positions
+  int voltage_bndry = (int)(1024 / dial_steps); // 1024 / 12 = 85.33 (the interval with which the voltage increases -> [i * 85v] )
 
+  // loop steps through each interval and checks if the analog voltage read is within the range.
+  // checking smallest interval to largest allows us to check first if our value is greater than
+  // a boundary value, if it is, then increases 'i'. If we find our voltage is less than a boundary
+  // value, then 'i' is our found Rotary_output_value.
   for (int i=1; i * voltage_bndry < 1024; i++)
   {
     if (AnalogRead(ROTARY_SWITCH_PIN) <= (i * voltage_bndry))
@@ -115,45 +122,22 @@ void display_state()
     }
   }
 
-  switch(Rotary_output_value)
+  // now instead, our switch case starts at 1 instead of 0
+  switch (Rotary_output_value)
   {
-    case 0:
-      /*Display:
-
-        Vehicle Speed
-        Current gear
-        RPM
-
-        */
-        KMH_Gear_RPM();
-
     case 1:
-      /*Display:
-
-      State of charge
-      Brake pressure
-
-      */
-      Charge_and_brake_display();
+      // menu display 1 ...
 
     case 2:
-      /*Display:
+      // menu display 2 ...
 
-        GLV voltage
-        GLV current
-
-      */
-      GLV_display();
-
-    case 3:
-      /*Display:
-
-        Engine temp
-        Accumulator temp
-
-      */
-      Temp_display();
+    case ##:
+      // other subsequent display menus ...
   }
 }
+
+------------------------------------
+
+
 
 ```
