@@ -22,6 +22,9 @@ const int RPM_THRESHOLDS[NUM_LEDS] = {
   14000,
 };
 
+unsigned int RPM = 0;
+
+
 void setLEDs();
 
 void setup() {
@@ -34,27 +37,27 @@ void setup() {
   //   leds[i] = CRGB::Black;
   // }
   Serial.begin( 9600 );
-  Serial.println("Enter RPM: ");
+  // Serial.println("Enter RPM: ");
 }
 
 void loop() {
 
-  while (Serial.available() == 0) {
+  // while (Serial.available() == 0) {
     
-  }
+  // }
 
-  unsigned int RPM = Serial.parseInt();
-  // unsigned int RPM = 7000;
-  Serial.println("RPM Entered: " + (String)RPM);
+  // unsigned int RPM = Serial.parseInt();
+  Serial.println("RPM: " + (String)RPM);
 
-  setLEDs( RPM );
+  RPM = setLEDs( RPM );
 
   FastLED.show();
+  RPM += 100;
 }
 
 
 // RPM range is from 0 - 14000, therefore each light represents ~1077 rpm
-void setLEDs( unsigned int RPM) {
+unsigned int setLEDs( unsigned int RPM) {
 
   int led_index; // Led to start changing color of in the loop
   int section;  // Led to stop changing color at in the loop
@@ -92,7 +95,11 @@ void setLEDs( unsigned int RPM) {
 
       leds[i] = LED_color;
       clearOtherLEDs(i+1);
-      break; // Break at first threshold RPM is lower than
+      if (RPM > RPM_THRESHOLDS[ RED_SEC + 2]) {
+        return 0;
+      }
+      return RPM;
+      // break; // Break at first threshold RPM is lower than
     }
   }
   
