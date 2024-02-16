@@ -19,10 +19,10 @@ const int RPM_THRESHOLDS[NUM_LEDS] = {
   7539, 8616,
   9693, 10770,
   11847, 12824,
-  14000,
+  13500,
 };
 
-unsigned int RPM = 0;
+unsigned int global_RPM = 0;
 
 
 void setLEDs();
@@ -32,38 +32,40 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS);
 
-  FastLED.setBrightness( 10 );  // Set global brightness of the LEDs
-  // for(int i=0; i<NUM_LEDS; i++){
-  //   leds[i] = CRGB::Black;
-  // }
+  FastLED.setBrightness( 5 );  // Set global brightness of the LEDs
   Serial.begin( 9600 );
-  // Serial.println("Enter RPM: ");
+  // Serial.println("Enter RPM: ");      // Uncomment for testing with User input RPM
 }
 
 void loop() {
 
-  // while (Serial.available() == 0) {
-    
-  // }
+  // while (Serial.available() == 0) {}          // Uncomment for testing with User input RPM
+  // unsigned int RPM = Serial.parseInt();       // Uncomment for testing with User input RPM
+  // Serial.println("RPM: " + (String)RPM);   // Uncomment for testing with User input RPM
+  // unsigned int RPM = 13777;
 
-  // unsigned int RPM = Serial.parseInt();
-  Serial.println("RPM: " + (String)RPM);
-
-  RPM = setLEDs( RPM );
+  setLEDs( global_RPM );
 
   FastLED.show();
-  RPM += 100;
+  global_RPM += 50;                              // Uncomment for testing with rising RPM
 }
 
 
-// RPM range is from 0 - 14000, therefore each light represents ~1077 rpm
-unsigned int setLEDs( unsigned int RPM) {
+/*
+  Function: Turns leds on and color codes based on RPM.
+            First 5 LEDs are green,
+            Next 4 LEDs are red,
+            Last 4 LEDs are blue
+            Redline flashes when above 13500 RPM
+            RPM range is from 0 - 14000, therefore each light represents range of ~1077 rpm
+*/
+void setLEDs( unsigned int RPM) {
 
   int led_index; // Led to start changing color of in the loop
   int section;  // Led to stop changing color at in the loop
   CRGB LED_color;
 
-
+  // Categorize RPM into the 3 colors
   if(RPM <= RPM_THRESHOLDS[ GREEN_SEC ]) {
     led_index = 0;
     section = GREEN_SEC;
@@ -80,9 +82,18 @@ unsigned int setLEDs( unsigned int RPM) {
     LED_color = CRGB::RoyalBlue;
   }
   if(RPM > RPM_THRESHOLDS[ BLUE_SEC ]) { // Redlining
-    fill_solid(leds, NUM_LEDS, CRGB::Magenta);
+
+    // Flash Lights when redline RPM
+    fill_solid(leds, NUM_LEDS, CRGB::Red);
+    FastLED.show();
+    delay(100);
     fill_solid(leds, NUM_LEDS, CRGB::Black);
+    FastLED.show();
+    delay(100);
+    global_RPM = 0;
+    return;
   }
+
 
   for(int i=led_index; i < section+1; i++) {
     if(RPM <= RPM_THRESHOLDS[i]) {
@@ -95,11 +106,10 @@ unsigned int setLEDs( unsigned int RPM) {
 
       leds[i] = LED_color;
       clearOtherLEDs(i+1);
-      if (RPM > RPM_THRESHOLDS[ RED_SEC + 2]) {
-        return 0;
+      if (RPM >= RPM_THRESHOLDS[ BLUE_SEC - 1]) {                 // Uncomment for testing with rising RPM
+        global_RPM = 0;
       }
-      return RPM;
-      // break; // Break at first threshold RPM is lower than
+      break; // Break at the first threshold RPM is lower than
     }
   }
   
