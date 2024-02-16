@@ -6,7 +6,23 @@
 #define DELAY_TIME  220
 #define BRIGHTNESS 100
 
+const int GREEN_SEC = 4;
+const int RED_SEC = 8;
+const int BLUE_SEC = 12;
+
 CRGB leds[NUM_LEDS];
+
+const int RPM_THRESHOLDS[NUM_LEDS] = {
+  1077, 2154,
+  3231, 4308,
+  5385, 6462,
+  7539, 8616,
+  9693, 10770,
+  11847, 12824,
+  14000,
+};
+
+void setLEDs();
 
 void setup() {
 
@@ -24,66 +40,67 @@ void setup() {
 void loop() {
 
   while (Serial.available() == 0) {
+    
   }
 
   unsigned int RPM = Serial.parseInt();
   Serial.println("RPM Entered: " + (String)RPM);
 
-  RPMtoLED( 0, RPM );
-
-  // leds[0] = CRGB::Lime;
-  // leds[1] = CRGB::Lime;
-  // leds[2] = CRGB::Lime;
-  // leds[3] = CRGB::Lime;
-  // leds[4] = CRGB::Lime;
-  // leds[5] = CRGB::Red;
-  // leds[6] = CRGB::Red;
-  // leds[7] = CRGB::Red;
-  // leds[8] = CRGB::Red;
-  // leds[9] = CRGB::RoyalBlue;
-  // leds[10] = CRGB::RoyalBlue;
-  // leds[11] = CRGB::RoyalBlue;
-  // leds[12] = CRGB::RoyalBlue;
+  setLEDs( RPM );
 
   FastLED.show();
 }
 
 
 // RPM range is from 0 - 14000, therefore each light represents ~1077 rpm
-void RPMtoLED( unsigned char section, unsigned int RPM) {
+void setLEDs( unsigned int RPM) {
 
-  switch(section){
-    case 0:
-      // Could set each led based on 1 range of values, but the sensor may not
-      // pick up the RPM value before it sets the next light (i.e could skip a light). 
-      // Would be safer to set all prev leds?
-
-      if (RPM <= 1077) leds[0] = CRGB::Lime;
-      if (RPM > 1077 && RPM <= 2154) leds[1] = CRGB::Lime;
-      if (RPM > 2154 && RPM <= 3231) leds[2] = CRGB::Lime;
-      if (RPM > 3231 && RPM <= 4308) leds[3] = CRGB::Lime;
-      if (RPM > 4308 && RPM <= 5385) leds[4] = CRGB::Lime;
-      break;
+  int led_index; // Led to start changing color of in the loop
+  int section;  // Led to stop changing color at in the loop
+  CRGB LED_color;
 
 
-    // case 1078 ... 2154:
-    //   for(int i=0; i<NUM_LEDS; i++){
-    //     leds[i] = CRGB::Black;
-    //   }
+  if(RPM <= RPM_THRESHOLDS[ GREEN_SEC ]) {
+    led_index = 0;
+    section = GREEN_SEC;
+    LED_color = CRGB::Lime;
+  }
+  if(RPM > RPM_THRESHOLDS[ GREEN_SEC ] && RPM <= RPM_THRESHOLDS[ RED_SEC ]) {
+    led_index = GREEN_SEC + 1;
+    section = RED_SEC;
+    LED_color = CRGB::Red;
+  }
+  if(RPM > RPM_THRESHOLDS[ RED_SEC ] && RPM <= RPM_THRESHOLDS[ BLUE_SEC ]) {
+    led_index = RED_SEC + 1;
+    section = BLUE_SEC;
+    LED_color = CRGB::RoyalBlue;
+  }
+  if(RPM > RPM_THRESHOLDS[ BLUE_SEC ]) { // Redlining
+    fill_color(leds, NUM_LEDS, CRGB::Magenta);
+    fill_color(leds, NUM_LEDS, CRGB::Black);
+  }
 
-    //   leds[0] = CRGB::Lime;
-    //   leds[1] = CRGB::Lime;
-    //   leds[2] = CRGB::Lime;
-    //   leds[3] = CRGB::Lime;
-    //   leds[4] = CRGB::Lime;
-    //   leds[5] = CRGB::Red;
-    //   leds[6] = CRGB::Red;
-    //   leds[7] = CRGB::Red;
-    //   leds[8] = CRGB::Red;
-    //   break;
-    default:
-      Serial.println("Fuck");
-      break;
+  for(int i=led_index; i < section+1; i++) {
+    if(RPM <= RPM_THRESHOLDS[i]) {
+      
+      // Sets all the previous lights to the LED_color ** Necessary?
+      // Is there a case where the RPM would skip threshold levels in between sensor readings?
+      // for(int j=0; j < i; j++) {
+      //   leds[j] = LED_color;
+      // }
+
+
+      leds[i] = LED_color;
+      Serial.println(i);
+      clearOtherLEDs(i+1);
+      break; // Break at first threshold RPM is lower than
+    }
   }
   
+}
+
+void clearOtherLEDs(int i){
+  for (i; i < NUM_LEDS; i++){
+    leds[i] = CRGB::Black;
+  }
 }
