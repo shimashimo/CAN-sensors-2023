@@ -44,6 +44,7 @@ void loop() {
   }
 
   unsigned int RPM = Serial.parseInt();
+  // unsigned int RPM = 7000;
   Serial.println("RPM Entered: " + (String)RPM);
 
   setLEDs( RPM );
@@ -76,8 +77,8 @@ void setLEDs( unsigned int RPM) {
     LED_color = CRGB::RoyalBlue;
   }
   if(RPM > RPM_THRESHOLDS[ BLUE_SEC ]) { // Redlining
-    fill_color(leds, NUM_LEDS, CRGB::Magenta);
-    fill_color(leds, NUM_LEDS, CRGB::Black);
+    fill_solid(leds, NUM_LEDS, CRGB::Magenta);
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
   }
 
   for(int i=led_index; i < section+1; i++) {
@@ -85,13 +86,11 @@ void setLEDs( unsigned int RPM) {
       
       // Sets all the previous lights to the LED_color ** Necessary?
       // Is there a case where the RPM would skip threshold levels in between sensor readings?
-      // for(int j=0; j < i; j++) {
+      // for(int j=led_index; j < i; j++) {
       //   leds[j] = LED_color;
       // }
 
-
       leds[i] = LED_color;
-      Serial.println(i);
       clearOtherLEDs(i+1);
       break; // Break at first threshold RPM is lower than
     }
