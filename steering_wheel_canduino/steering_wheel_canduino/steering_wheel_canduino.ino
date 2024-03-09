@@ -2,6 +2,7 @@
 #include "mcp2515_can.h"
 #include "mcp2515_can_dfs.h"
 #include "JC_Button.h"  // library for input buttons
+#include "led_tachometer.h"
 
 typedef unsigned char byte;
 
@@ -126,7 +127,7 @@ void setup() {
   attachInterrupt( digitalPinToInterrupt(SHIFT_DOWN_BUTTON_PIN), shift_down, FALLING ); // Sending signal on press, not release for some reason.
   
   // LED strip setups
-  led.begin();
+  tachometer.begin();
 }
 
 /********** Main Loop ***************/
@@ -169,6 +170,9 @@ void loop() {
     shift_down_flag = false;
     //send can message
   }
+
+  tachometer.setLEDs( RPM );
+  FastLED.show();
 }
 
 /********** Function Implementations ***************/
