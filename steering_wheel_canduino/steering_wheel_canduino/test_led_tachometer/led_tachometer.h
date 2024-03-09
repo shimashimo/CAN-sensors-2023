@@ -8,7 +8,7 @@
 
 class LED_Tachometer {
   public:
-    LED_Tachometer(int brightness) : m_BRIGHTNESS(brightness) {}
+    LED_Tachometer(int brightness, int GREEN_SEC, int YELLOW_SEC) : m_BRIGHTNESS(brightness),  m_GREEN_SEC(GREEN_SEC), m_YELLOW_SEC(YELLOW_SEC) {}
     void begin();
     void setLEDs( unsigned int RPM);
     void clearOtherLEDs(int i);
@@ -16,6 +16,8 @@ class LED_Tachometer {
   private:
     static constexpr int LED_PIN = 7;
     int m_BRIGHTNESS;
+    const int m_GREEN_SEC;
+    const int m_YELLOW_SEC;
 };
 
 #endif

@@ -7,8 +7,8 @@ const int NUM_LEDS = 13;
 // Index for RPM threshold values
 // The upper bound for the RPM to be that color using RPM_THRESHOLDS[ COLOR ]
 // I.E The lights will be green when RPM < 9693, where GREEN_SEC = 4
-const int GREEN_SEC = 4;
-const int YELLOW_SEC = 0;
+// const int GREEN_SEC = 4;
+// const int m_YELLOW_SEC = 0;
 
 CRGB leds[NUM_LEDS];
 
@@ -55,17 +55,17 @@ void LED_Tachometer::setLEDs( unsigned int RPM )
   CRGB LED_color;
 
   // Categorize RPM into the 2 colors
-  if(RPM <= RPM_THRESHOLDS[ GREEN_SEC ]) {
+  if(RPM <= RPM_THRESHOLDS[ m_GREEN_SEC ]) {
     led_index = NUM_LEDS;
-    section = GREEN_SEC;
+    section = m_GREEN_SEC;
     LED_color = CRGB::Lime;
   }
-  if(RPM > RPM_THRESHOLDS[ GREEN_SEC ] && RPM <= RPM_THRESHOLDS[ YELLOW_SEC ]) {
-    led_index = GREEN_SEC - 1;
-    section = YELLOW_SEC;
+  if(RPM > RPM_THRESHOLDS[ m_GREEN_SEC ] && RPM <= RPM_THRESHOLDS[ m_YELLOW_SEC ]) {
+    led_index = m_GREEN_SEC - 1;
+    section = m_YELLOW_SEC;
     LED_color = CRGB::Yellow;
   }
-  if(RPM > RPM_THRESHOLDS[ YELLOW_SEC ]) { // Hitting Redline RPM - BAD
+  if(RPM > RPM_THRESHOLDS[ m_YELLOW_SEC ]) { // Hitting Redline RPM - BAD
     if (currentMillis - previousMillis >= interval) {
       previousMillis = currentMillis; // save the last time we blinked the LED
 
@@ -94,7 +94,7 @@ void LED_Tachometer::setLEDs( unsigned int RPM )
 
       leds[i] = LED_color;
       clearOtherLEDs(i-1);
-      // if (RPM >= RPM_THRESHOLDS[ YELLOW_SEC ]) {                 // Uncomment for testing with rising RPM
+      // if (RPM >= RPM_THRESHOLDS[ m_YELLOW_SEC ]) {                 // Uncomment for testing with rising RPM
       //   // global_RPM = 0;
       // }
       break; // Break at the first threshold RPM is lower than

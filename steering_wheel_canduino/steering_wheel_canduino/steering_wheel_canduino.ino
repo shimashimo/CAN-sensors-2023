@@ -33,6 +33,13 @@ unsigned char stateOfCharge[8];
 // will need a byte variable. Define any other constants or variables 
 // needed that can be defined outside of a function.
 
+// -> LED Tachometer vars
+// LED PIN IS DEFINED IN led_tachometer.h AS IT NEEDS TO BE A CONST EXPRESSION
+#define BRIGHTNESS 5
+#define GREEN_SEC 4
+#define YELLOW_SEC 0
+LED_Tachometer tachometer(BRIGHTNESS, GREEN_SEC, YELLOW_SEC);
+
 // -> shift button vars
 #define SHIFT_UP_BUTTON_PIN = 2;
 #define SHIFT_DOWN_BUTTON_PIN = 3;
@@ -118,6 +125,8 @@ void setup() {
   pinMode( SHIFT_DOWN_BUTTON_PIN, INPUT_PULLUP );
   attachInterrupt( digitalPinToInterrupt(SHIFT_DOWN_BUTTON_PIN), shift_down, FALLING ); // Sending signal on press, not release for some reason.
   
+  // LED strip setups
+  led.begin();
 }
 
 /********** Main Loop ***************/
