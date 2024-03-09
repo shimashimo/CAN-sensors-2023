@@ -7,7 +7,7 @@
 
 // Index for RPM threshold values
 // The upper bound for the RPM to be that color using RPM_THRESHOLDS[ COLOR ]
-// I.E In the green zone, the RPM will be less than RPM_THRESHOLDS[ GREEN_SEC ] == 11847 rpm, where GREEN_SEC = 10
+// I.E The lights will be green when RPM < 9693, where GREEN_SEC = 4
 const int GREEN_SEC = 4;
 const int YELLOW_SEC = 0;
 
@@ -16,15 +16,6 @@ CRGB leds[NUM_LEDS];
 // Each LED represents 1077 RPM
 // Coordinate the green section with the nominal RPM [Setting Green < 10770]
 // Yellow section is 
-// const int RPM_THRESHOLDS[NUM_LEDS] = { 
-//   1077, 2154,
-//   3231, 4308,
-//   5385, 6462,
-//   7539, 8616,
-//   9693, 10770,
-//   11847, 12824,
-//   13500,
-// };
 const int RPM_THRESHOLDS[NUM_LEDS] = { 
   13500, 12824,
   11847, 10770,
@@ -41,7 +32,7 @@ bool redlineLED = false; // State variable of LED flash for redline
 unsigned long previousMillis = 0;  // will store last time LED was updated
 const long interval = 100;  // interval at which to blink (milliseconds)
 
-unsigned int global_RPM = 0;
+// unsigned int global_RPM = 0;
 
 
 void setLEDs();
@@ -63,11 +54,11 @@ void loop() {
   // Serial.println("RPM: " + (String)RPM);   // Uncomment for testing with User input RPM
   // unsigned int RPM = 13777;
 
-  setLEDs( global_RPM );
+  // setLEDs( global_RPM );                   // Used for testing/debugging without sensor
 
   FastLED.show();
-  global_RPM += 50;                              // Uncomment for testing with rising RPM
-  Serial.println(String(global_RPM));
+  // global_RPM += 50;                              // Uncomment for testing with rising RPM
+  // Serial.println(String(global_RPM));
 }
 
 
@@ -98,11 +89,7 @@ void setLEDs( unsigned int RPM) {
     LED_color = CRGB::Yellow;
   }
   if(RPM > RPM_THRESHOLDS[ YELLOW_SEC ]) { // Hitting Redline RPM - BAD
-      global_RPM = 0;
-      return;
-
     if (currentMillis - previousMillis >= interval) {
-      
       previousMillis = currentMillis; // save the last time we blinked the LED
 
       if(redlineLED) {
