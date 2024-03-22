@@ -15,9 +15,12 @@
 
 // include the library code:
 #include "Adafruit_LiquidCrystal.h"
+#include "display_lcd.h"
 
 // Connect via i2c, default address #0 (A0-A2 not jumpered)
 Adafruit_LiquidCrystal lcd(0);
+
+// float values[4];
 
 void setup() {
   Serial.begin(115200);
@@ -26,26 +29,27 @@ void setup() {
 
   // set up the LCD's number of rows and columns:
   // NOTE: can be tested on our 20 x 4 display at Q-hut. Change (16, 2) -> (20, 4)
-  if (!lcd.begin(16, 2)) { 
+  if (!lcd.begin(20, 4)) { 
     Serial.println("Could not init backpack. Check wiring.");
     while(1);
   }
   Serial.println("Backpack init'd.");
 
   // Print a message to the LCD.
-  lcd.print("hello, world!");
+  // lcd.print("hello, world!");
+  menu_setup(lcd);
 }
 
 void loop() {
-  // set the cursor to column 0, line 1
-  // (note: line 1 is the second row, since counting begins with 0):
-  lcd.setCursor(0, 1);
-  // print the number of seconds since reset:
-  lcd.print(millis()/1000);
+  // for(int i=0; i<4; i++){
+  //   values[]
+  // }
+  // update_all(lcd, values, 1);
+  update_section_int(lcd, UPRIGHT, 1, millis()/1000);
+  update_section_int(lcd, UPLEFT, 1, 1+millis()/1000);
+  update_section_int(lcd, DOWNLEFT, 1, 3+millis()/1000);
+  update_section_int(lcd, DOWNRIGHT, 1, 4+millis()/1000);
 
-  lcd.setBacklight(HIGH);
-  delay(500);
-  lcd.setBacklight(LOW);
-  delay(500);
-}
+  // delay(1000);
+} 
 
