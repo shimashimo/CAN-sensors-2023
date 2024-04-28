@@ -1,13 +1,7 @@
 /*
-  ReadAnalogVoltage
+  Modified code of ReadAnalogVoltage example and dial_switch_case_concept.md
 
-  Reads an analog input on pin 0, converts it to voltage, and prints the result to the Serial Monitor.
-  Graphical representation is available using Serial Plotter (Tools > Serial Plotter menu).
-  Attach the center pin of a potentiometer to pin A0, and the outside pins to +5V and ground.
-
-  This example code is in the public domain.
-
-  https://www.arduino.cc/en/Tutorial/BuiltInExamples/ReadAnalogVoltage
+  Kinda jank but enough for testing the dial switches
 */
 int dial_steps = 12;
 int prev_value = 0;
@@ -25,11 +19,10 @@ void setup() {
 void loop() {
   // read the input on analog pin 0:
   int sensorValue = analogRead(A0);
-  // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
-  // float voltage = sensorValue * (5.0 / 1023.0);
-  // print out the value you read:
-  // Serial.println(sensorValue);
-  
+  // Analog reading goes from 0 - 1023
+
+  /*Can probably do this better but idk rn*/
+  // To reduce redundant checks
   if(sensorValue != prev_value){
     // Reversing as voltage is greatest at position 1
     for(int i=12; i*voltage_boundary > 0; i--) {
@@ -39,7 +32,7 @@ void loop() {
       }
     }
   }
-  Serial.println(dial_pin);
+  Serial.println(dial_pin); // Print
 
   switch (dial_pin){
     case 1:
@@ -56,8 +49,8 @@ void loop() {
     case 4:
       Serial.println("4th Mode");
       break;
-    // default:
-      // Serial.println("Default");
+    default:
+      Serial.println("Default");
   }
-  delay(500);
+  delay(200); //Just to slow down output prints
 }
