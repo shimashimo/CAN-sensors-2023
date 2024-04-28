@@ -1,5 +1,6 @@
 /*
-  Library for determining Dial Switch positions. Can use the switch cases here or if its easier implement them in the display or main file
+  Library for determining Dial Switch positions. Can use the switch cases here with includes for OLED display
+  or if its easier implement them in the display or main file, define the functions there and pass in the Dial Position.
 */
 #include "dial_switch.h"
 

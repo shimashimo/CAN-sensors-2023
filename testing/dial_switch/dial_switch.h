@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 int get_dial_pos(int ROTARY_SWTICH_PIN);
-void drive_switch_case(int dial_position); 
-void menu_switch_case(int dial_position);
+void drive_switch_case(int drive_pos); 
+void menu_switch_case(int menu_pos);
 
 #endif

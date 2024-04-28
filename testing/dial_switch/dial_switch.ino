@@ -7,7 +7,8 @@
   but requires global vars and wasn't sure how to do that atm. Leaving as a TODO task
 */
 #include "dial_switch.h"
-int ROTARY_SWITCH_PIN = A0;
+int DRIVE_DIAL = A0;
+int MENU_DIAL = A1;
 
 
 void setup() {
@@ -17,16 +18,17 @@ void setup() {
 
 void loop() {
   // Get the dial position (number)
-  int dial_position = get_dial_pos(ROTARY_SWITCH_PIN);
+  int drive_pos = get_dial_pos(DRIVE_DIAL);
+  int menu_pos = get_dial_pos(MENU_DIAL);
 
-  Serial.println(dial_position);
-  if(!dial_position) {
+  // Serial.println(drive_pos);
+  if(!drive_pos || !menu_pos) {
     Serial.println("Dial Switch Error");
     return 0;
   }
 
   // Use dial position for switch cases
-  drive_switch_case(dial_position);
-  menu_switch_case(dial_position);
+  drive_switch_case(drive_pos);
+  menu_switch_case(menu_pos);
 
 }
