@@ -8,7 +8,7 @@
 */
 #include "dial_switch.h"
 int DRIVE_DIAL = A0;
-int MENU_DIAL = A1;
+int MENU_DIAL = A5;
 
 
 void setup() {
@@ -24,7 +24,6 @@ void loop() {
   // Serial.println(drive_pos);
   if(!drive_pos || !menu_pos) {
     Serial.println("Dial Switch Error");
-    return 0;
   }
 
   // Use dial position for switch cases

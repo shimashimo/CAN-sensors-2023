@@ -12,7 +12,7 @@ int get_dial_pos(int ROTARY_SWTICH_PIN)
 {
   // read the input on analog pin 0:
   // Analog reading goes from 0 - 1023
-  int sensorValue = analogRead(A0);
+  int sensorValue = analogRead(ROTARY_SWTICH_PIN);
 
   /*Can probably do this better but idk rn*/
     // Reversing as voltage is greatest at position 1
