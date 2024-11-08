@@ -7,8 +7,10 @@
   but requires global vars and wasn't sure how to do that atm. Leaving as a TODO task
 */
 #include "dial_switch.h"
-int DRIVE_DIAL = A0;
-int MENU_DIAL = A1;
+const int DRIVE_DIAL = A0;
+const int MENU_DIAL = A1;
+Dial_Switch drive_dial(DRIVE_DIAL_PIN);
+Dial_Switch menu_dial(MENU_DIAL_PIN);
 
 
 void setup() {
@@ -17,12 +19,12 @@ void setup() {
 }
 
 void loop() {
-  // Get the dial position (number)
-  int drive_pos = get_dial_pos(DRIVE_DIAL);
-  int menu_pos = get_dial_pos(MENU_DIAL);
+  // Read in the dial position (integer)
+  drive_dial.read_adc();
+  menu_dial.read_adc();
 
   // Serial.println(drive_pos);
-  if(!drive_pos || !menu_pos) {
+  if(!drive_dial.get_dial_pos() || !menu_dial.get_dial_pos()) {
     Serial.println("Dial Switch Error");
     return 0;
   }

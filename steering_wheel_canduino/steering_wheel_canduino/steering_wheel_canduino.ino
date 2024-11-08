@@ -34,6 +34,12 @@ unsigned char stateOfCharge[8];
 // will need a byte variable. Define any other constants or variables 
 // needed that can be defined outside of a function.
 
+// -> Dial Switch Vars
+const int DRIVE_DIAL_PIN = A0;
+const int MENU_DIAL_PIN = A1;
+Dial_Switch drive_dial(DRIVE_DIAL_PIN);
+Dial_Switch menu_dial(MENU_DIAL_PIN);
+
 // -> LED Tachometer vars
 // LED PIN IS DEFINED IN led_tachometer.h AS IT NEEDS TO BE A CONST EXPRESSION
 #define BRIGHTNESS 5
