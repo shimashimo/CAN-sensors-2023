@@ -2,7 +2,9 @@
 #include "mcp2515_can.h"
 #include "mcp2515_can_dfs.h"
 #include "JC_Button.h"  // library for input buttons
-#include "led_tachometer.h"
+#include "led_tachometer.h" // For RPM light strip
+#include "../display_menu/US2066.h"
+#include "dial_switch.h"
 
 typedef unsigned char byte;
 
@@ -33,6 +35,12 @@ unsigned char stateOfCharge[8];
 // If a sensor/button/component needs to send a CAN message, it
 // will need a byte variable. Define any other constants or variables 
 // needed that can be defined outside of a function.
+
+// -> OLED Display Vars
+US2066 OLED;
+const int DISPLAY_ROWS = 4;
+const int DISPLAY_ROWS = 20;
+const int PRINT_COL = 9;
 
 // -> Dial Switch Vars
 const int DRIVE_DIAL_PIN = A0;
@@ -144,7 +152,6 @@ void loop() {
   can_delay_cycle = millis() - can_timeold;
   if (can_delay_cycle >= CAN_MSG_DELAY) message_cycle();
 
-
   /* Engine/Motor Start Buttons*/
   engine_start_button.read();
 
@@ -177,6 +184,20 @@ void loop() {
     //send can message
   }
 
+  // Read from ADC to get dial position
+  drive_dial.read_adc();
+  menu_dial.read_adc();
+  // Todo: Error checking for dial position
+
+  // Drive Mode
+  drive_switch_case(drive_dial.get_dial_pos());
+
+  if(menu_dial.check_change()) {
+    OLED.clear();
+    menu_dial.reset_change();
+  }
+  menu_switch_case(OLED, menu_dial.get_dial_pos())
+  
   tachometer.setLEDs( RPM );
   FastLED.show();
 }
@@ -195,8 +216,6 @@ void init_CAN()
     delay(100);
   }
   Serial.println("CAN init ok!");
-
-  
 }
 
 /* 
@@ -212,49 +231,6 @@ void send_CAN_msg(unsigned long id, byte ext, byte len, const byte * msg_buf)
 
   if (send_status == MCP2515_OK) Serial.println("Message Sent Successfully!");
   else Serial.println("message Error...");
-}
-
-/*
-  Function: The message_cycle() function is used to perpetually cycle through and
-            send messages from the various sensors connected to the front canduino.
-            Each global data array for the sensors is constantly updated from the main
-            loop from which message_cycle() takes the data array and transmits the 
-            message over the CAN network. 
-  Params:   global sensor data buffers - The global variables are used to as containers
-            to allow for indefinite updating of the sensor values. The fuction then reads
-            those values and transmits them.
-  Pre-conditions: CAN must first be initialized.
-*/
-void message_cycle()
-{
-  switch (message_num)
-  {
-    case 0:
-      // send_CAN_msg(0x55, 0, 1, YOUR_VARIABLE);
-      message_num++;
-      break;
-    
-    case 1:
-      // send_CAN_msg(0x66, 0, 1, YOUR_VARIABLE);
-      message_num++;
-      break;
-    
-    case 2:
-      // send_CAN_msg(0x77, 0, 1, YOUR_VARIABLE);
-      message_num++;
-      break;
-
-    case 3:
-      // send_CAN_msg(0x88, 0, 1, YOUR_VARIABLE);
-      message_num = 0;
-      break;
-
-    default:
-      //reset message number if issue is encountered.
-      message_num = 0;
-  }
-
-  can_timeold = millis();
 }
 
 /*
@@ -348,6 +324,95 @@ void switch_data_store(unsigned long CAN_ID, char*& data_container)
       break;
   }
 }
+/*
+  Function: Use the data containers being sent for various sensors to display information to the dash screen
+  TODO: Replace DataContainer with appropriate data container to display data
+*/
+void menu_switch_case(US2066 OLED, int menu_dial_pos) {
+  switch (dial_position) { 
+    case 1: // Main Display
+      // det_drive_mode(DriveModeData); /** Determine drive mode then update screen **/
+      char SpeedBuf[8];
+      char RPMbuf[8];
+      char TempBuf[8]; 
+      OLED.print(0, 0, "Speed:");       // print(StartingRow, Starting Column, StringToDisplay)
+      itoa(DataContainer, SpeedBuf, 10);   // Requires itoa() as the oled print function uses String type
+      OLED.print(0, PRINT_COL, SpeedBuf);
+
+      OLED.print(1, 0, "SOCa: ");
+      itoa(DataContainer, RPMbuf, 10);       // Replace DataCont
+      OLED.print(1, PRINT_COL, RPMbuf);
+      
+      OLED.print(2, 0, "Drive: ");
+
+      OLED.print(3, 0, "ENGTemp:");
+      itoa(DataContainer, TempBuf, 10);
+      OLED.print(3,PRINT_COL, TempBuf);
+      break;
+      
+    case 2: // Battery Status
+      OLED.print(0, 0, "SOC: ");
+      itoa(wheelSpeed)
+      OLED.print(1, 0, " A");
+      OLED.print(2, 0, " A")
+      break;
+      
+    case 3: // Accumulator Cell Voltages?
+      char CellBuf[24]; // I think there were 24 cells?
+      for(int i=0; i < 24; i++) { // Change the cell data to strings
+        // itoa(CellDataContainer[i], CellBuf[i]);
+      }
+      OLED.print(0, 0, CellBuff[0]);
+      break;
+
+    case 4: // Acuumulator Temperature
+      Serial.println("Accumulator Temperatures");
+      break;
+
+    case 5: // Brake Pressure
+      Serial.println("Brake Pressure");
+      break;
+
+    case 6: // Suspension Travel
+      Serial.println("Suspension Travel");
+      break;
+
+    default: // Error if getting here
+      Serial.println("Default");
+      break;
+  }
+}
+
+/*
+  Function to send can msg to put car into various drive modes, from dial input
+*/
+void drive_switch_case(int dial_position) {
+  /* IMPLEMENT DRIVE MODE STUFF HERE */
+  switch (dial_position){
+    case 1: // Drive Mode
+      Serial.println("Drive Mode");
+      // Send CAN msg to put into drive mode?
+      break;
+      
+    case 2: // Eco Mode
+      Serial.println("ECO Mode");
+      // Send CAN msg
+      break;
+      
+    case 3:
+      Serial.println("3rd Mode");
+      break;
+
+    case 4:
+      Serial.println("4th Mode");
+      break;
+
+    default:
+      Serial.println("Default");
+      break;
+  }
+}
+
 
 /*
   Function: The shift_up function is an ISR that sends a CAN message from the steering wheel canduino,
