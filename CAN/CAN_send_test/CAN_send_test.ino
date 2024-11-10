@@ -31,6 +31,8 @@ void loop() {
   delay(100);
 }
 
+
+
 // Initialize MCP2515 running with a baudrate of 500kb/s.
 void init_CAN()
 {
