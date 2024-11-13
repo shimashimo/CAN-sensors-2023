@@ -3,7 +3,7 @@
 #include "mcp2515_can_dfs.h"
 #include "JC_Button.h"  // library for input buttons
 #include "led_tachometer.h" // For RPM light strip
-#include "../display_menu/US2066.h"
+#include "US2066.h"
 #include "dial_switch.h"
 
 typedef unsigned char byte;
@@ -23,11 +23,11 @@ unsigned char len = 0; // READ message Length
 unsigned char rxBuf[8]; // READ buffer for storing message
 
 // Global Variables and Constants
-// Data containers for menu sceen data
+// Data containers for menu screen data
 unsigned char wheelSpeed[8];
 unsigned char engineTemp[8];
 unsigned char stateOfCharge[8];
-//...
+//...and more as needed
 
 // TODO: The defines are used for the pin number for the associated
 // sensor/button/component is attached to onn the canduino.
@@ -71,35 +71,11 @@ Button engine_start_button(ENGINE_START_BUTTON_PIN, 100, true, true); //btn(pin,
 #define MOTOR_START_BUTTON_PIN ##
 Button motor_start_button(MOTOR_START_BUTTON_PIN, 100, true, true);
 
-// -> fuel pump status vars
-#define FUEL_SIGNAL_PIN ##
-byte Fuel_Pump_OK_data[1] = {0x00};
-
-// -> fan status vars
-#define FAN_SIGNAL_PIN ##
-byte Fan_OK_data[1] = {0x00};
-
-// -> brake status vars
-#define BRAKE_SIGNAL_PIN ##
-byte Brake_OK_data[1] = {0x00};
-
-// -> start status vars
-#define START_SIGNAL_PIN ##
-byte Start_OK_data[1] = {0x00};
-
-// -> current sensor vars
-#define CURRENT_SENSOR_PIN ##
-byte Current_Sensor_Voltage_Data[2] ={0x00,0x00};
-
 // -> shifting functionality vars
 unsigned long shift_CAN_ID = 0x01; // shift message CAN ID
-#define SHIFT_ACTUATOR_PIN ##
-byte shift_signal_data[1] = {0x00};
 
 // -> throttle functionality vars
 unsigned long aps_CAN_ID = 0x02; // accelerator position sensor CAN ID
-#define THROTTLE_PIN ##
-byte Throttle_signal_data[1] = {0x00};
 
 // Function Declarations
 void init_CAN();
@@ -115,6 +91,8 @@ void switch_data_store();
 void shift_up();
 void shift_down();
 void debounce();
+void menu_switch_case(US2066 OLED, int menu_dial_pos);
+void drive_switch_case(int dial_position);
 
 /********** Setup/Initialization ***************/
 
