@@ -269,7 +269,8 @@ void CAN_read_from_network()
     return;
   }
 
-  for(i=0; i < len; i++)
+
+  for(int i=0; i < len; i++)
   {
     data_container[i] = rxBuf[i];
   }
@@ -390,7 +391,6 @@ void drive_switch_case(int dial_position) {
       break;
   }
 }
-
 
 /*
   Function: The shift_up function is an ISR that sends a CAN message from the steering wheel canduino,
