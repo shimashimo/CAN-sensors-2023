@@ -5,10 +5,10 @@
 #include "mcp2515_can.h"
 #include "mcp2515_can_dfs.h"
 
-long unsigned int rxId; // message ID
-unsigned char len = 0; // message Length
-unsigned char rxBuf[8]; // buffer for storing message
-char msgString[128];
+// long unsigned int rxId; // message ID
+// unsigned char len = 0; // message Length
+// unsigned char rxBuf[8]; // buffer for storing message
+// char msgString[128];
 
 const int CAN_INT_PIN = 2;
 const int SPI_CS_PIN = 9;
@@ -20,7 +20,7 @@ unsigned long can_timeold;
 int can_delay_cycle;
 int message_num = 0;
 
-unsigned char Brake_Status[8];
+unsigned char Brake_Status[8] = {9,3,8,9,9,3,8,9};
 unsigned char Fuel_Status[8];
 unsigned char Fan_Status[8];
 unsigned char WheelSpeed[8];
@@ -34,6 +34,10 @@ byte Wheel_Speed_data[1] = {0x00}; const byte WSS_CAN_ID = 0x88;
 // Function Definitions
 void init_CAN();
 mcp2515_can CAN(SPI_CS_PIN); // set CS to pin 9
+void CAN_message_handler();
+void CAN_read_from_network();
+void switch_data_store(unsigned long CAN_ID, unsigned char*& data_container);
+
 
 void setup() 
 {
@@ -49,7 +53,8 @@ void loop()
 
   can_delay_cycle = millis() - can_timeold;
   if (can_delay_cycle >= CAN_MSG_DELAY) {
-    message_cycle();
+    can_timeold = millis();
+    
   }
   
 }
@@ -81,49 +86,6 @@ void send_CAN_msg(unsigned long id, byte ext, byte len, const byte * msg_buf)
 }
 
 /*
-  Function: The message_cycle() function is used to perpetually cycle through and
-            send messages from the various sensors connected to the front canduino.
-            Each global data array for the sensors is constantly updated from the main
-            loop from which message_cycle() takes the data array and transmits the 
-            message over the CAN network. 
-  Params:   global sensor data buffers - The global variables are used to as containers
-            to allow for indefinite updating of the sensor values. The fuction then reads
-            those values and transmits them.
-  Pre-conditions: CAN must first be initialized.
-*/
-void message_cycle()
-{
-  switch (message_num)
-  {
-    case 0:
-      // send_CAN_msg(0x55, 0, 1, YOUR_VARIABLE);
-      message_num++;
-      break;
-    
-    case 1:
-      // send_CAN_msg(0x66, 0, 1, YOUR_VARIABLE);
-      message_num++;
-      break;
-    
-    case 2:
-      // send_CAN_msg(0x77, 0, 1, YOUR_VARIABLE);
-      message_num++;
-      break;
-
-    case 3:
-      // send_CAN_msg(0x88, 0, 1, YOUR_VARIABLE);
-      message_num = 0;
-      break;
-
-    default:
-      //reset message number if issue is encountered.
-      message_num = 0;
-  }
-
-  can_timeold = millis();
-}
-
-/*
   Function: The message_read() function gets the CAN ID of the current message on the
             CAN network and routes the program to the appropriate handler.
 */
@@ -138,8 +100,9 @@ void CAN_message_handler()
     canId = CAN.getCanId();
     CAN.readMsgBuf(&msg_length, msg_buffer);
 
-    Serial.print("\nCandID: ");
-    Serial.println(canId);
+    // Serial.print("\nCandID: ");
+    // Serial.println(canId);
+    Serial.println("Printing Message Buffer");
     for (int i=0; i < msg_length; i++) {
       Serial.println(msg_buffer[i]);
     }
@@ -175,10 +138,10 @@ void CAN_message_handler()
         break;
     }
     Serial.println("=== Printing Data Containers");
-    Serial.print("Brake Data: "); Serial.print(Brake_Status[1]); Serial.println("");
-    Serial.print("Fuel Data: "); Serial.print(Fuel_Status[1]); Serial.println("");
-    Serial.print("Fan Data: "); Serial.print(Fan_Status[1]); Serial.println("");
-    Serial.print("WheelSpeed Data: "); Serial.print(WheelSpeed[1]); Serial.println("\n\n");
+    Serial.print("Brake Data: "); Serial.print(Brake_OK_data[0]); Serial.println("");
+    Serial.print("Fuel Data: "); Serial.print(Fuel_Pump_OK_data[0]); Serial.println("");
+    Serial.print("Fan Data: "); Serial.print(Fan_OK_data[0]); Serial.println("");
+    Serial.print("WheelSpeed Data: "); Serial.print(Wheel_Speed_data[0]); Serial.println("\n\n");
   }
 }
 
@@ -190,12 +153,6 @@ void CAN_message_handler()
 */
 void CAN_read_from_network()
 {
-  // if (CAN_MSGAVAIL == CAN.checkReceive())
-  // {
-  //   unsigned long canId = CAN.getCanId();
-  //   CAN.readMsgBuf(&len, rxBuf); 
-  // }
-
   unsigned char* data_container = NULL;
   switch_data_store(canId, data_container);
   if (data_container == NULL) 
@@ -204,9 +161,9 @@ void CAN_read_from_network()
     return;
   }
 
-  for(int i=0; i < len; i++)
+  for(int i=0; i < msg_length; i++)
   {
-    Serial.print(msg_buffer[i]);
+    // Serial.print(msg_buffer[i]);
     data_container[i] = msg_buffer[i];
   }
 }
@@ -217,29 +174,27 @@ void CAN_read_from_network()
             from the incoming CAN message. the method returns a pointer to the data
             container that is used for storing data in the read function.
 */
-void switch_data_store(unsigned long CAN_ID, char*& data_container)
+void switch_data_store(unsigned long CAN_ID, unsigned char*& data_container)
 {
   switch(CAN_ID)
   {
     case BRAKE_CAN_ID:
-      Brake_Status[0] = 99;
-      Serial.println("Getting to brake");
-      data_container = Brake_Status;
+      data_container = Brake_OK_data;
       break;
 
     case FUEL_CAN_ID:
       //engine temp
-      data_container = Fuel_Status;
+      data_container = Fuel_Pump_OK_data;
       break;
 
     case FAN_CAN_ID:
       //engine temp
-      data_container = Fan_Status;
+      data_container = Fan_OK_data;
       break;
 
     case WSS_CAN_ID:
       //engine temp
-      data_container = WheelSpeed;
+      data_container = Wheel_Speed_data;
       break;
 
     //...

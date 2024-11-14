@@ -12,7 +12,7 @@ typedef unsigned char byte;
 unsigned long canId = 0x00; // CAN message ID
 byte msg_length = 0; // length of message from CAN
 byte msg_buffer[8]; // buffer for storing message from CAN
-#define  CAN_MSG_DELAY 100
+#define CAN_MSG_DELAY 1000  // time between message sends in millis
 unsigned long can_timeold;
 int can_delay_cycle;
 int message_num = 0;
@@ -40,17 +40,21 @@ void setup() {
 
 void loop() {
   // iRandNum = rand() % (max - min + 1) + min;
-  Brake_OK_data[1] = rand() % (9 - 0 + 1) + 0;
-  Fuel_Pump_OK_data[1] = rand() % (19 - 10 + 1) + 10;
-  Fan_OK_data[1] = rand() % (29 - 20 + 1) + 20;
-  Wheel_Speed_data[1] = rand() % (39 - 30 + 1) + 30;
+  Brake_OK_data[0] = random(50, 59);
+  Fuel_Pump_OK_data[0] = random(60, 69);
+  Fan_OK_data[0] = random(70, 79);
+  Wheel_Speed_data[0] = random(80, 89);
   
-  // CAN_message_handler();
 
   can_delay_cycle = millis() - can_timeold;
-  if (can_delay_cycle >= CAN_MSG_DELAY) message_cycle();
-  
-  delay(5000);
+  if (can_delay_cycle >= CAN_MSG_DELAY) {
+    Serial.print("PRinting BRAKE OK STATUS");
+    Serial.println(Brake_OK_data[0]);
+    
+    can_timeold = millis();
+    message_cycle();
+  }
+
 }
 
 
@@ -77,26 +81,25 @@ void send_CAN_msg(unsigned long id, byte ext, byte len, const byte * msg_buf)
 
 void message_cycle()
 {
-  Serial.println("Message Cycling");
   switch (message_num)
   {
     case 0:
       Serial.print("Sending Brake: ");
-      Serial.println(Brake_OK_data[1]);
+      Serial.println(Brake_OK_data[0]);
       send_CAN_msg(0x55, 0, 1, Brake_OK_data);
       message_num++;
       break;
     
     case 1:
       Serial.print("Sending Fuel: ");
-      Serial.println(Fuel_Pump_OK_data[1]);
+      Serial.println(Fuel_Pump_OK_data[0]);
       send_CAN_msg(0x66, 0, 1, Fuel_Pump_OK_data);
       message_num++;
       break;
     
     case 2:
       Serial.print("Sending FAN: ");
-      Serial.println(Fan_OK_data[1]);
+      Serial.println(Fan_OK_data[0]);
       send_CAN_msg(0x77, 0, 1, Fan_OK_data);
       message_num++;
       break;
