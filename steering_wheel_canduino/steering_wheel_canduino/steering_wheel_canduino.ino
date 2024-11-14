@@ -19,9 +19,6 @@ unsigned long can_timeold;
 int can_delay_cycle;
 int message_num = 0;
 
-unsigned char len = 0; // READ message Length
-unsigned char rxBuf[8]; // READ buffer for storing message
-
 // Global Variables and Constants
 // Data containers for menu screen data
 unsigned char wheelSpeed[8];
@@ -63,6 +60,16 @@ bool shift_down_flag = false;
 unsigned long lastDebounceTime = 0;
 unsigned long debounceDelay = 200;
 
+/*************** GLOBAL CAN VARS AND CONTAINERS ****************************/
+// CAN IDs are randomly made, change as needed
+byte Brake_OK_data[1]     = {0x00};   const byte BRAKE_CAN_ID = 0x55; 
+byte Fuel_Pump_OK_data[1] = {0x00};   const byte FUEL_CAN_ID  = 0x66;
+byte Fan_OK_data[1]       = {0x00};   const byte FAN_CAN_ID   = 0x77;
+byte Wheel_Speed_data[1]  = {0x00};   const byte WSS_CAN_ID   = 0x88;
+byte Shift_Up_data[1]     = {0x00};   const byte SHIFT_UP_CAN_ID = 0x99;
+byte Shift_Down_data[1]   = {0x00};   const byte SHIFT_DOWN_CAN_ID = 0x98;
+/***************************************************************************/
+
 // -> engine start vars
 #define ENGINE_START_BUTTON_PIN ##
 Button engine_start_button(ENGINE_START_BUTTON_PIN, 100, true, true); //btn(pin, debounceTime, pullupEnabled, logicInvert)
@@ -72,7 +79,8 @@ Button engine_start_button(ENGINE_START_BUTTON_PIN, 100, true, true); //btn(pin,
 Button motor_start_button(MOTOR_START_BUTTON_PIN, 100, true, true);
 
 // -> shifting functionality vars
-unsigned long shift_CAN_ID = 0x01; // shift message CAN ID
+const unsigned long SHIFT_UP_CAN_ID = 0x99; // shift message CAN ID
+const unsigned long SHIFT_DOWN_CAN_ID = 0x98; // shift message CAN ID
 
 // -> throttle functionality vars
 unsigned long aps_CAN_ID = 0x02; // accelerator position sensor CAN ID
@@ -147,19 +155,23 @@ void loop() {
   }
 
   /*Shift messages*/
+  // TODO: Implement rpm checking to know if shift up should occur (is rpm > Min_value_rpm)
   if(shift_up_flag)
   {
-    // TODO: Implement rpm checking to know if shift up should occur (is rpm > Min_value_rpm)
-    // reset flag
+    Serial.println("INTERRUPT SHIFTING");
+    Shift_Up_data[0] = 0x01;
+    send_CAN_msg(0x99, 0, 1, Shift_Up_data);
     shift_up_flag = false;
-    //send can_message 
+    Shift_up_date[0] = 0x00;
   }
   if(shift_down_flag)
   {
     // TODO: Implement rpm checking to know if shift down should occur (is rpm < Max_value_rpm)
-    // reset flag
+    Serial.println("INTERRUPT SHIFTING");
+    Shift_Down_data[0] = 0x01;
+    send_CAN_msg(0x98, 0, 1, Shift_Down_data);
     shift_down_flag = false;
-    //send can message
+    Shift_Down_date[0] = 0x00;
   }
 
   // Read from ADC to get dial position
@@ -217,6 +229,8 @@ void send_CAN_msg(unsigned long id, byte ext, byte len, const byte * msg_buf)
 */
 void CAN_message_handler()
 {
+  void CAN_message_handler()
+{
   // TODO: This function is used as the main point of executing any function associated
   // to a read CAN message. Instead of calling your functions in "loop()", add cases
   // for each can ID and call your function from within the case
@@ -224,26 +238,52 @@ void CAN_message_handler()
   if (CAN_MSGAVAIL == CAN.checkReceive())
   {
     canId = CAN.getCanId();
-    CAN.readMsgBuf(&msg_length, msg_buffer)
+    CAN.readMsgBuf(&msg_length, msg_buffer);
 
+    /* Debugging Prints */
+    // Serial.print("\nCandID: ");
+    // Serial.println(canId);
+    // for (int i=0; i < msg_length; i++) {
+    //   Serial.println(msg_buffer[i]);
+    // }
+
+    /* Could change this switch case to a range of CAN IDs instead of having one for each case */
+    /* Like: if (canID <= 0x99 && canID >= 0x55 ) CAN_read_from_network(); */
     switch (canId)
     {
-      case shift_CAN_ID:
-        shift();
+      case BRAKE_CAN_ID:
+        Serial.println("BRAKE CAN MESSAGE RECEIVED");
+        CAN_read_from_network();
         break;
 
-      case aps_CAN_ID:
-        throttle();
+      case FUEL_CAN_ID:
+        Serial.println("FUEL CAN MESSAGE RECEIVED");
+        CAN_read_from_network();
         break;
-      /*
+
+      case FAN_CAN_ID:
+        Serial.println("FAN CAN MESSAGE RECEIVED");
+        CAN_read_from_network();
+        break;
+
+      case WSS_CAN_ID:
+        Serial.println("WSS CAN MESSAGE RECEIVED");
+        CAN_read_from_network();
+        break;
+/*
       case some_CAN_ID:
         some_event_handler_function();
         break;
-      */
+*/
       default:
         // do nothing if not an accepted CAN ID
         break;
     }
+    Serial.println("=== Printing Data Containers");
+    Serial.print("Brake Data: "); Serial.print(Brake_OK_data[0]); Serial.println("");
+    Serial.print("Fuel Data: "); Serial.print(Fuel_Pump_OK_data[0]); Serial.println("");
+    Serial.print("Fan Data: "); Serial.print(Fan_OK_data[0]); Serial.println("");
+    Serial.print("WheelSpeed Data: "); Serial.print(Wheel_Speed_data[0]); Serial.println("\n\n");
   }
 }
 
@@ -255,24 +295,18 @@ void CAN_message_handler()
 */
 void CAN_read_from_network()
 {
-  if (CAN_MSGAVAIL == CAN.checkReceive())
-  {
-    unsigned long canId = CAN.getCanId();
-    CAN.readMsgBuf(&len, rxBuf); 
-  }
-
-  char* data_container = nullptr;
+  unsigned char* data_container = NULL;
   switch_data_store(canId, data_container);
-  if (data_container == nullptr) 
+  if (data_container == NULL) 
   {
     Serial.println("error setting the data container...\n");
     return;
   }
 
-
-  for(int i=0; i < len; i++)
+  for(int i=0; i < msg_length; i++)
   {
-    data_container[i] = rxBuf[i];
+    // Serial.print(msg_buffer[i]);
+    data_container[i] = msg_buffer[i];
   }
 }
 
@@ -286,20 +320,29 @@ void switch_data_store(unsigned long CAN_ID, char*& data_container)
 {
   switch(CAN_ID)
   {
-    case WS_ID:
-      //wheel speed
-      data_container = wheelSpeed;
+    case BRAKE_CAN_ID:
+      data_container = Brake_OK_data;
       break;
 
-    case ET_ID:
+    case FUEL_CAN_ID:
       //engine temp
-      data_container = engineTemp;
+      data_container = Fuel_Pump_OK_data;
+      break;
+
+    case FAN_CAN_ID:
+      //engine temp
+      data_container = Fan_OK_data;
+      break;
+
+    case WSS_CAN_ID:
+      //engine temp
+      data_container = Wheel_Speed_data;
       break;
 
     //...
 
     default:
-      *data_container = nullptr;
+      *data_container = NULL;
       break;
   }
 }
