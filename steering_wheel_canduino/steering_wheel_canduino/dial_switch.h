@@ -1,66 +1,60 @@
 #ifndef DIAL_SWITCH_H
 #define DIAL_SWITCH_H
 
-#include "dial_switch.h"
 #include <Arduino.h>
 
-const int DIAL_STEPS = 12;
-const int VOLTAGE_BOUNDARY = (int)(1024/dial_steps - 2);
+/*
+  Simple dial switch class. 
+  DIAL_STEPS = how many "positions" the dial has.  
+  This example uses voltage boundaries to map analogRead( ) to a discrete position.
+*/
+
+#define DIAL_STEPS 6
 
 class Dial_Switch {
-  private:
-    int analog_pin;
-    int dial_position;
-    int last_dial_position;
-    bool dial_change;
-    int last_voltage;
-  public:
-    Dial_Switch(int analog_pin) {
-      this->analog_pin = analog_pin;
-      this->dial_position = 0; // set dial_position to zero initially to see if errors occur
-      this->last_dial_position = 0;
-      this->dial_change = false;
-      this->last_voltage = false;
-    }
+public:
+  Dial_Switch(int pin) : _pin(pin), _dialPos(1), _prevDialPos(1), _changed(false) {
+    pinMode(_pin, INPUT);
+  }
 
-    void read_adc() {
-      volatile int sensorValue = analogRead(analog_pin);
+  void read_adc() {
+    int val = analogRead(_pin);
+    // Map 0-1023 to 1-6 with clear boundaries
+    int newPos;
+    
+    if (val < 170)        newPos = 1;
+    else if (val < 340)   newPos = 2;
+    else if (val < 510)   newPos = 3;
+    else if (val < 680)   newPos = 4;
+    else if (val < 850)   newPos = 5;
+    else                  newPos = 6;
 
-      if(!sensorValue) {
-        Serial.print("Error reading ADC from Pin: "); 
-        Serial.println(analog_pin);
-        return;
-      }
-      
-      // Check if the ADC reading is different than last time. If different, check dial position
-      // reduces need to check the dial position every time. +-1 for ADC margin of error.
-      if(sensorValue > last_voltage+1 || sensorValue < last_voltage - 1) {
-        int dial_position;
-        for(int i=DIAL_STEPS; i*voltage_boundary > 0; i--) {
-          if(sensorValue >= (i*voltage_boundary)) {
-            dial_position = DIAL_STEPS+1 - i;   // Hack way of doing this - but works (sorry)
-            // Update the object's instance of the dial position equal to the calculated dial position
-            this->dial_position = dial_position;
-          }
-        }
-        // double check that the dial position changed - not just voltage fluctuation
-        if(this->dial_position != last_dial_position) {
-          dial_change = true;
-          last_dial_position = this->dial_position;
-        }
-      }
-      last_voltage = sensorValue;
+    if (newPos != _dialPos) {
+      _dialPos = newPos;
+      _changed = true;
+      _prevDialPos = _dialPos;
     }
+  }
 
-    int get_dial_pos() {
-      return dial_position; // same as this->dial_position
-    }
+  int get_dial_pos() const {
+    return _dialPos;
+  }
 
-    bool check_change() {
-      return dial_change;
-    }
-    void reset_change() {
-      dial_change = false;
-    }
+  // Return true if dial position changed since last check
+  bool check_change() const {
+    return _changed;
+  }
+
+  // Reset the "changed" flag after you handle it
+  void reset_change() {
+    _changed = false;
+  }
+
+private:
+  int _pin;
+  int _dialPos;
+  int _prevDialPos;
+  volatile bool _changed;
 };
-#endif
+
+#endif // DIAL_SWITCH_H

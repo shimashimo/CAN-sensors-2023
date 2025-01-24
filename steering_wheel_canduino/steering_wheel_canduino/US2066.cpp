@@ -14,8 +14,8 @@
 #include "Wire.h"
 #include "Math.h"
 #define DEFAULTAddress 0x3c
-#define OLED_Command_Mode 0x80
-#define OLED_Data_Mode 0x40
+#define OLED_Command_Mode 0x00  //Was 0x80 before for some reason?? Set command mode with D/C# bit LOW
+#define OLED_Data_Mode 0x40     // Set data/command select HIGH
 
 #define BAR_Beggining 0xDA //Works only in ROM-A
 
@@ -49,15 +49,15 @@ void US2066::init() {
   sendCommand(0x78); //SD=0
 
   //Set display mode
-  sendCommand(0x08);
-
+  sendCommand(0x08);  // ** Edit for Tanuj, this probably is a command to put into 2-line mode (i didn't know till today) try with commenting this out or not see if it matters
+  sendCommand(0x09);  // ** SET TO 4-LINE MODE
   //Set remap
   sendCommand(0x06);
 
   //CGROM/CGRAM Management
   sendCommand(0x72);
   sendData(0x01);    //ROM A
-  
+
   //Set OLED Characterization
   sendCommand(0x2a); //RE=1
   sendCommand(0x79); //SD=1
@@ -99,7 +99,7 @@ void US2066::init() {
 
 void US2066::cursor(uint8_t row, uint8_t col)
 {
-  int row_offsets[] = { 0x00, 0x40 };
+  int row_offsets[] = { 0x00, 0x20, 0x40, 0x60,};
   sendCommand(0x80 | (col + row_offsets[row]));
 }
 
@@ -207,10 +207,9 @@ void US2066::contrast(unsigned char contrast)
   sendCommand(0x2A);
   sendCommand(0x79);      //Set OLED Command set
 
-  sendCommand(0x81);      // Set Contrast
+  sendCommand(0x1F);      // Set Contrast
   sendCommand(contrast);  // send contrast value
   sendCommand(0x78);      // Exiting Set OLED Command set
   sendCommand(0x28);
 
 }
-
