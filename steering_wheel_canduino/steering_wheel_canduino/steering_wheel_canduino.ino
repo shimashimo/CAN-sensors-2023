@@ -43,7 +43,7 @@ const int DISPLAY_COLS = 20;
 
 // Dial pins
 const int DRIVE_DIAL_PIN = A0;
-const int MENU_DIAL_PIN  = A1;
+const int MENU_DIAL_PIN  = A3;
 
 // Create Dial_Switch objects
 Dial_Switch drive_dial(DRIVE_DIAL_PIN);
@@ -235,19 +235,19 @@ void loop() {
     int currentMenuPos = menu_dial.get_dial_pos();
     static int lastMenuPos = -1;  // Track last position
 
-    // Debug output
-    Serial.print("Current Menu Position: ");
-    Serial.print(currentMenuPos);
-    Serial.print(" Last Menu Position: ");
-    Serial.println(lastMenuPos);
+    // Debug output for averaged values
+    Serial.print("Menu Dial Raw Average: ");
+    Serial.print(menu_dial.get_raw_average());
+    Serial.print(" Position: ");
+    Serial.println(currentMenuPos);
 
     // Update display if position changed
     if (currentMenuPos != lastMenuPos) {
         OLED.clear();
-        delay(50);  // Give display time to clear
+        delay(50);
         menu_switch_case(OLED, currentMenuPos);
         lastMenuPos = currentMenuPos;
-        delay(50);  // Give display time to update
+        delay(50);
     }
 
     lastDisplayUpdate = currentMillis;
