@@ -18,8 +18,8 @@ bool prevMotorOnState = HIGH;
 int Prev_setpoint = 999;
 
 
-const int UP_SHIFT_SETPOINT = 600;
-const int DOWN_SHIFT_SETPOINT = -600;
+const int UP_SHIFT_SETPOINT = -600;      /** CHANGE WHEN MOUNTED ON CAR **/
+const int DOWN_SHIFT_SETPOINT = 600;   /** CHANGE WHEN MOUNTED ON CAR **/
 const int NEUTRAL_SETPOINT = 0;
 
 // Define the pins connected to Channel A and B of the encoder
@@ -40,7 +40,7 @@ bool inNeutralState;
 const unsigned long NEUTRAL_TIMEOUT = 200;  // Time in milliseconds to wait before returning
 
 void setup() {
-  // Serial.begin(9600);
+  Serial.begin(9600);
   pinMode(PWM_PIN, OUTPUT);
   sparkmax.attach(PWM_PIN);
 
@@ -86,15 +86,19 @@ void loop() {
 
 
   if (shiftUpState == LOW && prevShiftUpState == HIGH) {
-    // Serial.println("Shift Up Pressed");
-    Setpoint = UP_SHIFT_SETPOINT;
+    Serial.println("Shift Up Pressed");
+    // Setpoint = UP_SHIFT_SETPOINT;
+    sparkmax.writeMicroseconds(2000);
+    while(Input > UP_SHIFT_SETPOINT) {Input = myEnc.read();}
     Prev_setpoint = UP_SHIFT_SETPOINT;
     inNeutralState = false;
   }
  
   if (shiftDownState == LOW && prevShiftDownState == HIGH) {
-    // Serial.println("Shift Down Pressed");
-    Setpoint = DOWN_SHIFT_SETPOINT;
+    Serial.println("Shift Down Pressed");
+    // Setpoint = DOWN_SHIFT_SETPOINT;
+    sparkmax.writeMicroseconds(1000);
+    while(Input < DOWN_SHIFT_SETPOINT) {Input = myEnc.read();}
     Prev_setpoint = DOWN_SHIFT_SETPOINT;
     inNeutralState = false;
   }
@@ -130,7 +134,7 @@ void loop() {
   else if(Output > 700) { 
     // Full Forward: p >= 2000
     // Serial.println("FULL FORWARD");
-    sparkmax.writeMicroseconds(2500);
+    sparkmax.writeMicroseconds(2000);
     inNeutralState = false;
   }
   else if(Output >= 10 && Output <= 700) {
